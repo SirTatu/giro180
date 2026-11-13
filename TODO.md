@@ -1,16 +1,17 @@
 # TODO
 
-## Etapa 1A
-- [x] Repo, Pages, probado en PC e iPhone
+## Etapa 1 — cerrada
+- [x] Repo, Pages, Supabase, RLS probado, login en PC e iPhone
 
-## Etapa 1B
-- [ ] Proyecto Supabase creado
-- [ ] 001_core.sql ejecutado
-- [ ] Usuario creado y registros nuevos desactivados
-- [ ] 002_test_rls.sql sin errores
-- [ ] config.js completado y subido
-- [ ] Login probado en PC e iPhone
+## Etapa 2A — Central: núcleo, registro diario, hábitos
+- [ ] Probado en PC e iPhone (ver guía de prueba)
 
-## Etapa 2 (Central)
-- [ ] Configuración editable (umbrales de proteína, agua, sueño, días de alerta)
-- [ ] Hábitos y metas, prioridades, registro diario, dashboard, informes
+## Etapa 2B — Prioridades, objetivos, dashboard
+- [ ] Prioridades (máx. 3) · Objetivos generales/específicos · Dashboard · Historial de decisiones
+
+## Etapa 2C — Revisión semanal e informes
+- [ ] Revisión semanal · Comparación entre semanas · INFORME GENERAL (≤15 líneas) · Exportación
+
+## Ideas / pendientes
+- Cola de registro sin conexión (mejora futura)
+- Versión atómica de hábitos vía función SQL (hoy son 2 pasos con reversión)

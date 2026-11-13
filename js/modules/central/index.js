@@ -1,29 +1,33 @@
-// Central: por ahora solo verifica sesión y conexión con la base (Etapa 1B).
-import { supabase } from '../../supabase.js';
-import { APP_VERSION } from '../../config.js';
+// Central: contenedor con pestañas. (El dashboard y los informes llegan en 2B y 2C.)
+import { h } from '../../core/dom.js';
+import { renderHoy } from './hoy.js';
+import { renderHabitos } from './habitos.js';
+import { renderAjustes } from './ajustes.js';
 
-export function renderCentral(el, { session, signOut }) {
-  el.innerHTML = `
-    <h1>Central</h1>
-    <p class="sub">Panel principal (se construye en la Etapa 2)</p>
-    <div class="card">
-      <p><span class="dot ok"></span><span id="txt-user"></span></p>
-      <p><span class="dot" id="dot-db"></span><span id="txt-db">Comprobando base de datos…</span></p>
-    </div>
-    <button class="btn btn-sec" id="btn-salir" type="button">Cerrar sesión</button>
-    <p class="version">Versión ${APP_VERSION}</p>`;
+const TABS = [
+  { id: 'hoy', nombre: 'Hoy', render: renderHoy },
+  { id: 'habitos', nombre: 'Hábitos', render: renderHabitos },
+  { id: 'ajustes', nombre: 'Ajustes', render: renderAjustes }
+];
 
-  el.querySelector('#txt-user').textContent = 'Sesión iniciada: ' + session.user.email;
+export function renderCentral(el, ctx) {
+  const cuerpo = h('div');
+  const botones = new Map();
 
-  const dot = el.querySelector('#dot-db');
-  const txt = el.querySelector('#txt-db');
-  supabase.from('user_settings').select('user_id', { count: 'exact', head: true })
-    .then(({ error }) => {
-      dot.className = 'dot ' + (error ? 'warn' : 'ok');
-      txt.textContent = error
-        ? 'Error de base de datos: ' + error.message
-        : 'Base de datos conectada (RLS activo)';
-    });
+  function mostrar(id) {
+    for (const [tid, b] of botones) b.classList.toggle('active', tid === id);
+    const cont = h('div');                    // cada vista usa su propio contenedor
+    cuerpo.replaceChildren(cont);
+    TABS.find((t) => t.id === id).render(cont, ctx);
+  }
 
-  el.querySelector('#btn-salir').addEventListener('click', () => signOut());
+  const barra = h('div', { class: 'tabs', role: 'tablist' },
+    ...TABS.map((t) => {
+      const b = h('button', { class: 'tab', type: 'button', role: 'tab', onClick: () => mostrar(t.id) }, t.nombre);
+      botones.set(t.id, b);
+      return b;
+    }));
+
+  el.append(h('h1', {}, 'Central'), barra, cuerpo);
+  mostrar('hoy');
 }
