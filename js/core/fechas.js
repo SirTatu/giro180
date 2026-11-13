@@ -31,3 +31,16 @@ export function etiquetaLarga(f) {
   const [, m, d] = f.split('-');
   return `${NOMBRES_DIA[diaISO(f)]} ${Number(d)}/${Number(m)}`;
 }
+
+// Fecha y hora legible en hora de Argentina, a partir de un instante ISO (timestamptz).
+// Se arma a mano con las partes para que se vea igual en todos los navegadores: "mié 18/11 15:30".
+export function formatoFechaHora(iso) {
+  const partes = Object.fromEntries(
+    new Intl.DateTimeFormat('es-AR', {
+      timeZone: TZ, weekday: 'short', day: 'numeric', month: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    }).formatToParts(new Date(iso)).map((p) => [p.type, p.value])
+  );
+  const hora = partes.hour === '24' ? '00' : partes.hour;
+  return `${partes.weekday} ${partes.day}/${partes.month} ${hora}:${partes.minute}`;
+}

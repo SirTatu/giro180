@@ -1,8 +1,8 @@
 // Pruebas de la lógica central. Ejecutar con:  node --test tests/
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { hoy, sumarDias, diaISO, lunesDe, rango, etiquetaLarga } from '../js/core/fechas.js';
-import { ESTADO, agruparPorSerie, versionVigente, logsDeSerie, estadoDia, evaluar, resumenSerie } from '../js/core/estados.js';
+import { hoy, sumarDias, diaISO, lunesDe, rango, etiquetaLarga, formatoFechaHora } from '../js/core/fechas.js';
+import { ESTADO, agruparPorSerie, versionVigente, logsDeSerie, estadoDia, evaluar, resumenSerie, combinar, resumenGlobal } from '../js/core/estados.js';
 
 const gym = (extra = {}) => ({
   id: 'g1', series_id: 's1', kind: 'boolean', target_value: null,
@@ -79,4 +79,39 @@ test('evaluar: la meta es "o más" y el borde cumple', () => {
   assert.equal(evaluar(v, 140), 'done');
   assert.equal(evaluar(v, 139.9), 'missed');
   assert.equal(evaluar(v, 0), 'missed');
+});
+
+test('resumenGlobal: suma conteos, no promedia porcentajes, separa módulos', () => {
+  const g = gym({ module: 'gym' });
+  const p = { id: 'p1', series_id: 's2', module: 'nutri', kind: 'quantity', target_value: 140,
+    scheduled_days: [1, 2, 3, 4, 5, 6, 7], valid_from: '2026-11-01', valid_to: null };
+  const series = agruparPorSerie([g, p]);
+  const logs = [
+    log('g1', '2026-11-10', 'done'), log('g1', '2026-11-11', 'done'), log('g1', '2026-11-12', 'missed'),
+    log('p1', '2026-11-09', 'done'), log('p1', '2026-11-10', 'done')
+  ];
+  const { total, porModulo } = resumenGlobal(series, logs, '2026-11-09', '2026-11-13');   // lun a vie
+  const rg = porModulo.get('gym');
+  assert.deepEqual([rg.cumplidos, rg.incumplidos, rg.noRegistrados, rg.sinActividad], [2, 1, 1, 1]);
+  assert.equal(rg.pct, 67);
+  assert.equal(rg.cobertura, 75);
+  const rp = porModulo.get('nutri');
+  assert.deepEqual([rp.cumplidos, rp.incumplidos, rp.noRegistrados], [2, 0, 3]);
+  assert.equal(rp.pct, 100);
+  assert.equal(rp.cobertura, 40);
+  assert.deepEqual([total.cumplidos, total.incumplidos, total.noRegistrados, total.programados], [4, 1, 4, 9]);
+  assert.equal(total.pct, 80);          // 4 de 5 registrados (no el promedio de 67 y 100)
+  assert.equal(total.cobertura, 56);    // 5 de 9 programados
+});
+
+test('combinar sin datos devuelve null, no 0', () => {
+  const r = combinar([]);
+  assert.equal(r.pct, null);
+  assert.equal(r.cobertura, null);
+});
+
+test('formatoFechaHora usa hora de Argentina (UTC-3)', () => {
+  const t = formatoFechaHora('2026-11-18T18:30:00.000Z');
+  assert.match(t, /15:30/);
+  assert.match(t, /18\/11/);
 });

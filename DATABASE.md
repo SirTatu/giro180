@@ -26,3 +26,8 @@ La app no ofrece este camino: es una barrera contra cambios accidentales o autom
 
 ## Pendiente
 Tablas de Gym, Nutri, Vida, Estudio y Derma: se crean en su etapa (migraciones 002+ de datos).
+
+## Historial de decisiones: qué se anota solo
+La app agrega una fila a `decision_log` al: crear o cerrar una prioridad; crear, modificar, lograr, descartar o reactivar un objetivo.
+Las modificaciones de objetivos guardan qué cambió (título y fecha objetivo, antes → después).
+`decision_log` no permite editar ni borrar (solo select e insert).

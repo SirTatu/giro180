@@ -3,11 +3,11 @@
 ## Etapa 1 — cerrada
 - [x] Repo, Pages, Supabase, RLS probado, login en PC e iPhone
 
-## Etapa 2A — Central: núcleo, registro diario, hábitos
-- [ ] Probado en PC e iPhone (ver guía de prueba)
+## Etapa 2A — cerrada
+- [x] Núcleo, registro diario, hábitos (probado)
 
 ## Etapa 2B — Prioridades, objetivos, dashboard
-- [ ] Prioridades (máx. 3) · Objetivos generales/específicos · Dashboard · Historial de decisiones
+- [ ] Probado en PC e iPhone (ver guía de prueba)
 
 ## Etapa 2C — Revisión semanal e informes
 - [ ] Revisión semanal · Comparación entre semanas · INFORME GENERAL (≤15 líneas) · Exportación

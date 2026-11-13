@@ -70,3 +70,46 @@ export async function leerAjustes() {
 
 export const guardarAjustes = (userId, settings) =>
   supabase.from('user_settings').upsert({ user_id: userId, settings }, { onConflict: 'user_id' }).then(ok);
+
+// ---- Prioridades (máximo 3 activas: lo controla un trigger en la base) ----
+export const listarPrioridades = () =>
+  supabase.from('priorities').select('*')
+    .order('started_on', { ascending: false }).order('created_at', { ascending: false }).then(ok);
+
+export const crearPrioridad = (campos) =>
+  supabase.from('priorities').insert(campos).select().single().then(ok);
+
+export const cerrarPrioridad = (id, ended_on) =>
+  supabase.from('priorities').update({ ended_on }).eq('id', id).select().single().then(ok);
+
+// ---- Objetivos ----
+export const listarObjetivos = () => supabase.from('goals').select('*').order('created_at').then(ok);
+
+export const crearObjetivo = (campos) =>
+  supabase.from('goals').insert(campos).select().single().then(ok);
+
+export const actualizarObjetivo = (id, campos) =>
+  supabase.from('goals').update(campos).eq('id', id).select().single().then(ok);
+
+// ---- Historial de decisiones (solo se agrega) ----
+export const listarDecisiones = (limite = 30) =>
+  supabase.from('decision_log').select('*')
+    .order('decided_on', { ascending: false }).order('created_at', { ascending: false })
+    .limit(limite).then(ok);
+
+export const registrarDecision = (campos) => supabase.from('decision_log').insert(campos).then(ok);
+
+// ---- Compromisos / turnos ----
+export const listarCompromisos = () => supabase.from('appointments').select('*').order('starts_at').then(ok);
+
+export const proximosCompromisos = (n = 5) =>
+  supabase.from('appointments').select('*').eq('status', 'pending')
+    .gte('starts_at', new Date().toISOString()).order('starts_at').limit(n).then(ok);
+
+export const crearCompromiso = (campos) =>
+  supabase.from('appointments').insert(campos).select().single().then(ok);
+
+export const actualizarCompromiso = (id, campos) =>
+  supabase.from('appointments').update(campos).eq('id', id).select().single().then(ok);
+
+export const eliminarCompromiso = (id) => supabase.from('appointments').delete().eq('id', id).then(ok);

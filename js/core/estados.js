@@ -69,9 +69,37 @@ export function resumenSerie(versiones, logs, desde, hasta) {
     else if (d.estado === ESTADO.NO_REGISTRADO) r.noRegistrados++;
     else r.sinActividad++;
   }
+  return completar(r);
+}
+
+function completar(r) {
   r.programados = r.cumplidos + r.incumplidos + r.noRegistrados;
   const registrados = r.cumplidos + r.incumplidos;
   r.pct = registrados ? Math.round((100 * r.cumplidos) / registrados) : null;
   r.cobertura = r.programados ? Math.round((100 * registrados) / r.programados) : null;
   return r;
+}
+
+// Suma varios resúmenes y recalcula los porcentajes sobre el total (no promedia porcentajes).
+export function combinar(resumenes) {
+  const r = { cumplidos: 0, incumplidos: 0, noRegistrados: 0, sinActividad: 0, extras: 0 };
+  for (const x of resumenes) for (const k of Object.keys(r)) r[k] += x[k];
+  return completar(r);
+}
+
+// Resumen de todos los hábitos en un período: total y por módulo.
+export function resumenGlobal(series, logs, desde, hasta) {
+  const todos = [];
+  const porModulo = new Map();
+  for (const versiones of series.values()) {
+    const r = resumenSerie(versiones, logs, desde, hasta);
+    todos.push(r);
+    const m = versiones[versiones.length - 1].module;
+    if (!porModulo.has(m)) porModulo.set(m, []);
+    porModulo.get(m).push(r);
+  }
+  return {
+    total: combinar(todos),
+    porModulo: new Map([...porModulo].map(([m, lista]) => [m, combinar(lista)]))
+  };
 }

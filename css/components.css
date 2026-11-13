@@ -71,3 +71,30 @@ textarea { resize: vertical; }
 details.card.pad { padding: 14px 18px; }
 details summary { cursor: pointer; color: var(--muted); }
 .card.form { margin-top: 16px; }
+
+/* ---------- Etapa 2B ---------- */
+.seccion { margin-bottom: 36px; }
+.seccion-titulo { font-size: 1.25rem; margin: 0 0 12px; }
+.fila.sub { margin-left: 18px; border-left: 3px solid var(--line); border-radius: 0 14px 14px 0; }
+.hist-fila { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.card.pad { padding: 14px 18px; }
+.card.pad .prio { margin: 8px 0 0; display: block; }
+.card.pad .nota { margin-top: 8px; }
+
+.metricas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 4px; }
+.metrica { background: var(--bg); border-radius: 12px; padding: 10px 6px; text-align: center; }
+.metrica b { display: block; font-size: 1.5rem; }
+.metrica span { color: var(--muted); font-size: .75rem; }
+.metrica.ok b { color: var(--ok); }
+.metrica.bad b { color: var(--bad); }
+.metrica.warn b { color: var(--warn); }
+
+.mod-fila { display: grid; grid-template-columns: 70px 1fr auto; align-items: center; gap: 10px; margin-top: 10px; }
+.mod-nombre { font-size: .9rem; }
+.barra { height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.barra-in { height: 100%; background: var(--ok); border-radius: 999px; }
+
+.accesos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.acceso { background: var(--card); border-radius: 14px; padding: 14px 6px; text-align: center;
+  color: var(--text); text-decoration: none; display: flex; flex-direction: column; gap: 4px; font-size: .9rem; }
+.acceso span { font-size: 1.4rem; }
