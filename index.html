@@ -13,17 +13,12 @@
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" href="assets/icons/icon-192.png">
   <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
-  <main class="app">
-    <h1>Giro 180</h1>
-    <p class="sub">Etapa 1A: la base funciona.</p>
-    <div class="card">
-      <p><span class="dot" id="dot-sw"></span><span id="txt-sw">Comprobando Service Worker…</span></p>
-      <p><span class="dot" id="dot-mode"></span><span id="txt-mode">Comprobando modo de uso…</span></p>
-    </div>
-    <p class="version">Versión 0.1.0</p>
-  </main>
+  <div id="app"><p class="cargando">Cargando…</p></div>
+  <noscript>Giro 180 necesita JavaScript para funcionar.</noscript>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

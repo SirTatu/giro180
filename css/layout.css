@@ -1,0 +1,26 @@
+.login { max-width: 400px; margin: 0 auto; padding: 64px 20px; }
+.cargando { color: var(--muted); text-align: center; padding: 64px 20px; }
+
+.shell { display: flex; flex-direction: column; min-height: 100dvh; }
+.view { flex: 1; width: 100%; max-width: 720px; margin: 0 auto;
+  padding: 24px 20px calc(88px + env(safe-area-inset-bottom)); }
+
+/* Celular: barra inferior */
+.nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex;
+  justify-content: space-around; background: var(--card); border-top: 1px solid var(--line);
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); }
+.nav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 6px 2px; color: var(--muted); text-decoration: none; font-size: .7rem; border-radius: 10px; }
+.nav a.active { color: var(--ok); }
+.nav-ico { font-size: 1.25rem; line-height: 1; }
+.nav a:not(.active) .nav-ico { opacity: .6; }
+
+/* Computadora: barra lateral */
+@media (min-width: 768px) {
+  .shell { flex-direction: row; }
+  .nav { position: sticky; top: 0; height: 100dvh; width: 200px; flex: none;
+    flex-direction: column; justify-content: flex-start; gap: 4px;
+    padding: 24px 12px; border-top: 0; border-right: 1px solid var(--line); }
+  .nav a { flex: none; flex-direction: row; gap: 12px; font-size: 1rem; padding: 10px 12px; }
+  .view { margin: 0; max-width: 840px; padding: 32px; }
+}

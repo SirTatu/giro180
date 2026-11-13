@@ -1,12 +1,22 @@
 // Service Worker de Giro 180
 // Al cambiar archivos de la app, subí el número de VERSION para forzar la actualización.
-const VERSION = 'giro180-v0.1.0';
+const VERSION = 'giro180-v0.2.0';
 const ARCHIVOS = [
   './',
   'index.html',
   'manifest.webmanifest',
   'css/base.css',
+  'css/layout.css',
+  'css/components.css',
   'js/main.js',
+  'js/config.js',
+  'js/supabase.js',
+  'js/auth.js',
+  'js/router.js',
+  'js/views/login.js',
+  'js/views/shell.js',
+  'js/modules/registry.js',
+  'js/modules/central/index.js',
   'assets/icons/icon-192.png',
   'assets/icons/icon-512.png',
   'assets/icons/apple-touch-icon.png'
@@ -25,16 +35,20 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Red primero (siempre código fresco); si no hay conexión, usa la copia guardada.
-// Solo maneja archivos propios: las llamadas a Supabase no se tocan.
+// Red primero (código siempre fresco); sin conexión usa la copia guardada.
+// Solo toca archivos propios y la librería del CDN. Las llamadas a Supabase (datos) NUNCA se cachean.
 self.addEventListener('fetch', (e) => {
   const req = e.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  const url = new URL(req.url);
+  const permitido = url.origin === self.location.origin || url.hostname === 'cdn.jsdelivr.net';
+  if (req.method !== 'GET' || !permitido) return;
   e.respondWith(
     fetch(req)
       .then((res) => {
-        const copia = res.clone();
-        caches.open(VERSION).then((c) => c.put(req, copia));
+        if (res.ok) {
+          const copia = res.clone();
+          caches.open(VERSION).then((c) => c.put(req, copia));
+        }
         return res;
       })
       .catch(() => caches.match(req))
