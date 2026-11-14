@@ -5,7 +5,7 @@ import { agruparPorSerie } from '../js/core/estados.js';
 import {
   periodosSemana, diferencia, promedio, resumenAnimo, compararResumenes, calcularSemana, aIndicadores,
   detalleHabitos, filasDelDia, registroDiarioMd, resumenSemanalMd, comparacionMd, indicadoresAreaMd,
-  notaEspecialistaMd, informeGeneralMd, limitarLineas, ESPECIALISTAS, MAX_LINEAS_GENERAL
+  notaEspecialistaMd, informeGeneralMd, limitarLineas, ESPECIALISTAS, MAX_LINEAS_GENERAL, prioridadesAl, fmtEscala
 } from '../js/core/informes.js';
 
 // Semana en curso de las pruebas: lunes 2026-11-09 ... jueves 2026-11-12 es "hoy".
@@ -215,4 +215,22 @@ test('semana cerrada: se rotula sin "en curso" y compara semanas completas', () 
   assert.doesNotMatch(md, /en curso/);
   assert.doesNotMatch(md, /mismo tramo/);
   assert.match(md, /Esta semana: 2\/11 al 8\/11/);
+});
+
+test('prioridadesAl: devuelve las que regían en esa fecha, no las de hoy', () => {
+  const p = [
+    { title: 'A', started_on: '2026-10-01', ended_on: null },
+    { title: 'B', started_on: '2026-10-01', ended_on: '2026-11-05' },   // cerrada antes de esa semana
+    { title: 'C', started_on: '2026-11-12', ended_on: null },           // empezó después
+    { title: 'D', started_on: '2026-09-01', ended_on: '2026-11-20' }    // se cerró después: regía
+  ];
+  assert.deepEqual(prioridadesAl(p, '2026-11-09').map((x) => x.title), ['D', 'A']);
+  assert.deepEqual(prioridadesAl(p, '2026-11-12').map((x) => x.title), ['D', 'A', 'C']);
+  assert.deepEqual(prioridadesAl([], '2026-11-12'), []);
+});
+
+test('fmtEscala: sin datos no inventa un 0', () => {
+  assert.equal(fmtEscala(null), 'sin datos');
+  assert.equal(fmtEscala(3.5), '3,5/5');
+  assert.equal(fmtEscala(0), '0/5');
 });

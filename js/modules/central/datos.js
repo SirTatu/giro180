@@ -113,3 +113,13 @@ export const actualizarCompromiso = (id, campos) =>
   supabase.from('appointments').update(campos).eq('id', id).select().single().then(ok);
 
 export const eliminarCompromiso = (id) => supabase.from('appointments').delete().eq('id', id).then(ok);
+
+// ---- Revisión semanal ----
+export const entradasEntre = (desde, hasta) =>
+  supabase.from('daily_entries').select('*').gte('entry_date', desde).lte('entry_date', hasta).then(ok);
+
+export const leerRevision = (weekStart) =>
+  supabase.from('weekly_reviews').select('*').eq('week_start', weekStart).maybeSingle().then(ok);
+
+export const guardarRevision = (campos) =>
+  supabase.from('weekly_reviews').upsert(campos, { onConflict: 'user_id,week_start' }).select().single().then(ok);

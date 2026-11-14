@@ -25,7 +25,16 @@ const recortar = (t, n) => { const s = una_linea(t); return s.length > n ? s.sli
 export const fmtPct = (n) => (n == null ? 'sin datos' : `${n} %`);
 export const fmtDelta = (n) => (n == null ? 'sin datos para comparar' : n === 0 ? 'igual' : `${n > 0 ? '+' : ''}${n} pts`);
 const fmtNum = (n) => (n == null ? 'sin datos' : String(n).replace('.', ','));
-const fmtEscala = (n) => (n == null ? 'sin datos' : `${fmtNum(n)}/5`);        // ánimo / energía sobre 5
+export const fmtEscala = (n) => (n == null ? 'sin datos' : `${fmtNum(n)}/5`);        // ánimo / energía sobre 5
+
+// ---------- Prioridades de una fecha ----------
+// Las prioridades que regían al final de un período (no las de hoy): empezaron antes o ese día
+// y todavía no estaban cerradas. Sirve para que una semana pasada muestre lo que valía entonces.
+export function prioridadesAl(prioridades, fecha) {
+  return prioridades
+    .filter((p) => p.started_on <= fecha && (p.ended_on == null || p.ended_on > fecha))
+    .sort((a, b) => (a.started_on < b.started_on ? -1 : a.started_on > b.started_on ? 1 : 0));
+}
 
 // ---------- Períodos ----------
 // Devuelve el período de la semana elegida y el período anterior COMPARABLE:

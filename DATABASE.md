@@ -24,6 +24,11 @@ Un trigger impide editarlos o borrarlos. Para un cambio deliberado, en SQL Edito
 3. Registrarlo en `decision_log`.
 La app no ofrece este camino: es una barrera contra cambios accidentales o automáticos.
 
+## Revisión semanal (`weekly_reviews`)
+Una fila por semana (`week_start` = lunes, único por usuario). `summary` y `decisions` son texto tuyo;
+`indicators` es una **foto** en JSON de los indicadores al momento de guardar (se sobrescribe si volvés a guardar esa semana).
+La pestaña «Semana» siempre recalcula los números desde los registros: la foto sirve como historial.
+
 ## Pendiente
 Tablas de Gym, Nutri, Vida, Estudio y Derma: se crean en su etapa (migraciones 002+ de datos).
 

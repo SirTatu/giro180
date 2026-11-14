@@ -2,6 +2,7 @@
 import { h } from '../../core/dom.js';
 import { renderPanel } from './panel.js';
 import { renderHoy } from './hoy.js';
+import { renderSemana } from './semana.js';
 import { renderHabitos } from './habitos.js';
 import { renderPlan } from './plan.js';
 import { renderAjustes } from './ajustes.js';
@@ -9,6 +10,7 @@ import { renderAjustes } from './ajustes.js';
 const TABS = [
   { id: 'panel', nombre: 'Panel', render: renderPanel },
   { id: 'hoy', nombre: 'Hoy', render: renderHoy },
+  { id: 'semana', nombre: 'Semana', render: renderSemana },
   { id: 'habitos', nombre: 'Hábitos', render: renderHabitos },
   { id: 'plan', nombre: 'Plan', render: renderPlan },
   { id: 'ajustes', nombre: 'Ajustes', render: renderAjustes }
