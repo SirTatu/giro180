@@ -234,3 +234,34 @@ test('fmtEscala: sin datos no inventa un 0', () => {
   assert.equal(fmtEscala(3.5), '3,5/5');
   assert.equal(fmtEscala(0), '0/5');
 });
+
+test('armarInformes: devuelve los seis textos, respeta el día elegido y el tope de 15 líneas', async () => {
+  const { armarInformes } = await import('../js/core/informes.js');
+  const sem = calcularSemana({ series, logs, entradas: [{ entry_date: '2026-11-10', mood: 4, energy: 2, notes: 'ok' }], lunes: LUN, hoy: HOY });
+  const r = armarInformes({
+    sem, series, logs, entradas: [{ entry_date: '2026-11-10', mood: 4, energy: 2, notes: 'ok' }],
+    fecha: '2026-11-10', especialista: 'gym', prioridades: ['Bajar de peso'], revision: { summary: 'Buena', decisions: 'Seguir' }
+  });
+  assert.deepEqual(Object.keys(r), ['general', 'diario', 'semanal', 'comparacion', 'areas', 'especialista']);
+  for (const t of Object.values(r)) assert.ok(typeof t === 'string' && t.length > 20);
+  assert.ok(r.general.split('\n').length <= MAX_LINEAS_GENERAL);
+  assert.match(r.diario, /martes 10\/11/);
+  assert.match(r.diario, /Ánimo:\*\* 4\/5/);
+  assert.match(r.especialista, /^## Nota para Gym/);
+  assert.match(r.semanal, /Mi resumen:\*\* Buena/);
+  assert.match(r.general, /Decisiones:\*\* Seguir/);
+  // Especialista desconocido => Central; día sin entrada => "sin registrar"
+  const r2 = armarInformes({ sem, series, logs, entradas: [], fecha: HOY, especialista: 'inexistente' });
+  assert.match(r2.especialista, /^## Nota para Central/);
+  assert.match(r2.diario, /Ánimo:\*\* sin registrar/);
+});
+
+test('singular y plural correctos en los textos (1 día, 1 cumplido)', async () => {
+  const { pl } = await import('../js/core/informes.js');
+  assert.equal(pl(1, 'día', 'días'), '1 día');
+  assert.equal(pl(0, 'día', 'días'), '0 días');
+  assert.equal(pl(2, 'cumplido', 'cumplidos'), '2 cumplidos');
+  const s = calcularSemana({ series, logs, entradas: [{ entry_date: LUN, mood: 4, energy: 3 }], lunes: LUN, hoy: HOY });
+  assert.match(informeGeneralMd(s), /\(1 día con registro\)/);
+  assert.match(indicadoresAreaMd(s, series, logs), /Agua: 1 cumplido, 1 no cumplido/);
+});

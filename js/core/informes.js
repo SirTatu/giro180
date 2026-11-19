@@ -20,6 +20,8 @@ export const MAX_LINEAS_GENERAL = 15;
 
 // ---------- Utilidades de formato ----------
 const ddmm = (f) => { const [, m, d] = f.split('-'); return `${Number(d)}/${Number(m)}`; };
+// Singular/plural: 1 día, 2 días.
+export const pl = (n, sing, plur) => `${n} ${n === 1 ? sing : plur}`;
 const una_linea = (t) => String(t ?? '').replace(/\s+/g, ' ').trim();      // el texto libre no rompe el formato
 const recortar = (t, n) => { const s = una_linea(t); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
 export const fmtPct = (n) => (n == null ? 'sin datos' : `${n} %`);
@@ -201,11 +203,11 @@ export function resumenSemanalMd(sem, { revision = null, prioridades = [] } = {}
   if (!t.programados) {
     L.push('- No hay hábitos programados en este período.');
   } else {
-    L.push(`- **Cumplimiento:** ${fmtPct(t.pct)} (${t.cumplidos} cumplidos, ${t.incumplidos} no cumplidos)`);
+    L.push(`- **Cumplimiento:** ${fmtPct(t.pct)} (${pl(t.cumplidos, 'cumplido', 'cumplidos')}, ${pl(t.incumplidos, 'no cumplido', 'no cumplidos')})`);
     L.push(`- **Registrado:** ${fmtPct(t.cobertura)} · ${t.noRegistrados} sin registrar (dato faltante, no incumplimiento)`);
   }
   const a = sem.animo.actual;
-  L.push(`- **Ánimo:** ${fmtEscala(a.animo)} · **Energía:** ${fmtEscala(a.energia)} (${a.dias} días con registro)`);
+  L.push(`- **Ánimo:** ${fmtEscala(a.animo)} · **Energía:** ${fmtEscala(a.energia)} (${pl(a.dias, 'día', 'días')} con registro)`);
   if (prioridades.length) L.push(`- **Prioridades vigentes:** ${prioridades.map((p, i) => `${i + 1}) ${recortar(p, 60)}`).join(' · ')}`);
   if (revision?.summary && una_linea(revision.summary)) L.push(`- **Mi resumen:** ${una_linea(revision.summary)}`);
   if (revision?.decisions && una_linea(revision.decisions)) L.push(`- **Decisiones:** ${una_linea(revision.decisions)}`);
@@ -244,7 +246,7 @@ export function indicadoresAreaMd(sem, series, logs) {
       for (const d of detalleHabitos(series, logs, sem.periodo.desde, sem.periodo.hasta, [m])) {
         if (!d.programados) continue;
         const extra = d.noRegistrados ? `, ${d.noRegistrados} sin registrar` : '';
-        L.push(`- ${una_linea(d.nombre)}: ${d.cumplidos} cumplidos, ${d.incumplidos} no cumplidos${extra}`);
+        L.push(`- ${una_linea(d.nombre)}: ${pl(d.cumplidos, 'cumplido', 'cumplidos')}, ${pl(d.incumplidos, 'no cumplido', 'no cumplidos')}${extra}`);
       }
     }
   }
@@ -265,12 +267,12 @@ export function notaEspecialistaMd(esp, sem, series, logs, { prioridades = [] } 
     if (r) {
       for (const d of detalleHabitos(series, logs, sem.periodo.desde, sem.periodo.hasta, [m])) {
         if (!d.programados) continue;
-        L.push(`  - ${una_linea(d.nombre)}: ${d.cumplidos} cumplidos, ${d.incumplidos} no cumplidos, ${d.noRegistrados} sin registrar`);
+        L.push(`  - ${una_linea(d.nombre)}: ${pl(d.cumplidos, 'cumplido', 'cumplidos')}, ${pl(d.incumplidos, 'no cumplido', 'no cumplidos')}, ${d.noRegistrados} sin registrar`);
       }
     }
   }
   const a = sem.animo.actual;
-  L.push(`- Contexto general: ánimo ${fmtEscala(a.animo)}, energía ${fmtEscala(a.energia)} (${a.dias} días con registro)`);
+  L.push(`- Contexto general: ánimo ${fmtEscala(a.animo)}, energía ${fmtEscala(a.energia)} (${pl(a.dias, 'día', 'días')} con registro)`);
   if (prioridades.length) L.push(`- Prioridades vigentes: ${prioridades.map((p, i) => `${i + 1}) ${recortar(p, 60)}`).join(' · ')}`);
   L.push('- Los datos de esta área en la app por ahora son solo hábitos; lo que no figura no fue registrado (no asumir incumplimiento).');
   return L.join('\n');
@@ -294,7 +296,7 @@ export function informeGeneralMd(sem, { prioridades = [], revision = null } = {}
     L.push(`- **Sin registrar:** ${t.noRegistrados} de ${t.programados} programados (dato faltante, no incumplimiento)`);
   }
   const a = sem.animo.actual;
-  L.push(`- **Ánimo:** ${fmtEscala(a.animo)} · **Energía:** ${fmtEscala(a.energia)} (${a.dias} días con registro)`);
+  L.push(`- **Ánimo:** ${fmtEscala(a.animo)} · **Energía:** ${fmtEscala(a.energia)} (${pl(a.dias, 'día', 'días')} con registro)`);
   L.push(`- **Prioridades:** ${prioridades.length ? prioridades.map((p, i) => `${i + 1}) ${recortar(p, 50)}`).join(' · ') : 'sin prioridades vigentes'}`);
   const conDatos = ORDEN_MODULOS.filter((m) => sem.actual.porModulo.get(m)?.programados > 0);
   if (conDatos.length) L.push('- **Por área:**');
@@ -307,4 +309,20 @@ export function informeGeneralMd(sem, { prioridades = [], revision = null } = {}
   if (sinDatos.length) L.push(`- **Sin datos aún:** ${sinDatos.join(', ')}`);
   if (revision?.decisions && una_linea(revision.decisions)) L.push(`- **Decisiones:** ${recortar(revision.decisions, 140)}`);
   return limitarLineas(L.join('\n'));
+}
+
+// ---------- Todos los informes juntos ----------
+// Arma los seis textos de una vez. `fecha` es el día del registro diario; `especialista` es el id del chat
+// (si no existe, se usa Central). Es lo único que necesita la pantalla de Informes.
+export function armarInformes({ sem, series, logs, entradas = [], fecha, especialista, prioridades = [], revision = null }) {
+  const esp = ESPECIALISTAS.find((e) => e.id === especialista) ?? ESPECIALISTAS[0];
+  const entrada = entradas.find((e) => e.entry_date === fecha) ?? null;
+  return {
+    general: informeGeneralMd(sem, { prioridades, revision }),
+    diario: registroDiarioMd({ fecha, filas: filasDelDia(series, logs, fecha), entrada }),
+    semanal: resumenSemanalMd(sem, { revision, prioridades }),
+    comparacion: comparacionMd(sem),
+    areas: indicadoresAreaMd(sem, series, logs),
+    especialista: notaEspecialistaMd(esp, sem, series, logs, { prioridades })
+  };
 }

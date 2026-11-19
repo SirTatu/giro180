@@ -5,7 +5,7 @@ import { hoy, lunesDe, sumarDias, formatoFechaHora } from '../../core/fechas.js'
 import { NOMBRES_MODULO, ORDEN_MODULOS } from '../../core/constantes.js';
 import { agruparPorSerie } from '../../core/estados.js';
 import {
-  calcularSemana, aIndicadores, detalleHabitos, prioridadesAl, fmtPct, fmtDelta, fmtEscala
+  calcularSemana, aIndicadores, detalleHabitos, prioridadesAl, fmtPct, fmtDelta, fmtEscala, pl
 } from '../../core/informes.js';
 import * as D from './datos.js';
 
@@ -90,7 +90,7 @@ export function renderSemana(cont, ctx) {
     const tarjetaAnimo = h('div', { class: 'card pad' }, h('strong', {}, 'Ánimo y energía'),
       h('p', { class: 'nota' }, `Ánimo: ${fmtEscala(an.actual.animo)} · semana anterior: ${fmtEscala(an.anterior.animo)}`),
       h('p', { class: 'nota' }, `Energía: ${fmtEscala(an.actual.energia)} · semana anterior: ${fmtEscala(an.anterior.energia)}`),
-      h('p', { class: 'nota' }, `Días con registro: ${an.actual.dias} (anterior: ${an.anterior.dias}).`));
+      h('p', { class: 'nota' }, `Con registro: ${pl(an.actual.dias, 'día', 'días')} (semana anterior: ${an.anterior.dias}).`));
 
     // Por área
     const filas = ORDEN_MODULOS.filter((m) => sem.actual.porModulo.get(m)?.programados > 0).map((m) => {
@@ -108,7 +108,7 @@ export function renderSemana(cont, ctx) {
     const tarjetaHabitos = detalle.length
       ? h('details', { class: 'card pad' }, h('summary', {}, `Detalle por hábito (${detalle.length})`),
           ...detalle.map((d) => h('p', { class: 'fila-meta' },
-            `${NOMBRES_MODULO[d.module] ?? d.module} · ${d.nombre}: ${d.cumplidos} cumplidos, ${d.incumplidos} no cumplidos, ${d.noRegistrados} sin registrar`)))
+            `${NOMBRES_MODULO[d.module] ?? d.module} · ${d.nombre}: ${pl(d.cumplidos, 'cumplido', 'cumplidos')}, ${pl(d.incumplidos, 'no cumplido', 'no cumplidos')}, ${d.noRegistrados} sin registrar`)))
       : null;
 
     // Prioridades que regían al cierre de esa semana

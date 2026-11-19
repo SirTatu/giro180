@@ -1,24 +1,5 @@
 # Changelog
 
-## 0.8.0 — Etapa 3, hito 3-0 (migración de Gym y Nutri, sin cambios visibles)
-- `sql/003_gym_nutri.sql`: tablas `exercises`, `routines`, `routine_exercises`, `workout_sessions`, `workout_sets` y `meals`, con RLS (misma plantilla que 001) y trigger de `updated_at`.
-- Función `guardar_entrenamiento`: guarda o reemplaza un entrenamiento con todas sus series en UNA transacción (o se guarda todo o nada) y, si se le pasa el hábito, marca ese día como cumplido en la misma transacción.
-- Historial protegido: los ejercicios se archivan (no se borran), la sesión guarda una foto del nombre de la rutina y cada serie guarda una foto del objetivo vigente; borrar o cambiar una rutina no altera lo ya registrado.
-- Proteína de las comidas: `NULL` = no cargada (dato faltante), nunca equivale a 0 g.
-- `sql/004_test_rls_gym_nutri.sql`: 36 comprobaciones de seguridad y reglas (RLS, usuario ajeno y anónimo, restricciones, atomicidad, historial). No deja datos de prueba.
-- Las 6 tablas nuevas se suman a la exportación (`TABLAS_EXPORT`).
-- Nueva `tests/sql.test.mjs`: chequeo estructural estático de las migraciones (paréntesis, RLS en cada tabla, referencias, firma de revoke/grant, cobertura de la prueba de seguridad). No ejecuta el SQL.
-- **Orden obligatorio al actualizar:** exportar respaldo → ejecutar 003 → ejecutar 004 → recién ahí subir los archivos de la app (la exportación nueva lee las tablas nuevas y falla si todavía no existen).
-- Service Worker v0.8.0.
-
-## 0.7.0 — Etapa 2C, hito 2C-3 (exportación de datos)
-- Nueva tarjeta **Exportar tus datos** en Ajustes. Dos pasos: «Preparar exportación» lee todas las tablas y después se descarga (cada descarga nace de un toque nuevo, lo que exigen los navegadores móviles).
-- **JSON completo** (copia exacta con conteos por tabla y versión de la app) y **CSV por tabla** pensado para Excel en español: separador «;», coma decimal y BOM UTF-8 (acentos correctos). Los textos que empiezan con = + - @ se prefijan con «'» en el CSV para que Excel no los ejecute como fórmulas; el JSON conserva el texto exacto.
-- En celulares aparece además «Compartir…» (menú del sistema, permite «Guardar en Archivos»).
-- **Lectura sin cortes silenciosos:** se pide el total exacto a la base y se sigue leyendo hasta completarlo (soporta el límite de 1000 filas por consulta y límites menores). Si falta el total o una página viene vacía, se cancela con error y no se genera ningún archivo.
-- Nuevo `js/core/exportar.js` (lógica pura) con `TABLAS_EXPORT`. Una prueba automática lee `sql/` y falla si alguna tabla creada en una migración no está en la lista: así ninguna tabla futura (Gym, Nutri, Vida, Estudio, Derma) puede quedar fuera del backup sin que se note.
-- 42 pruebas automáticas en total. Service Worker v0.7.0. Sin migración SQL.
-
 ## 0.6.0 — Etapa 2C, hito 2C-2 (pestaña «Informes»)
 - Nueva pestaña **Informes** en Central con los seis informes en Markdown para pegar en los chats de ChatGPT: INFORME GENERAL (≤ 15 líneas), registro diario consolidado (elegís el día), resumen semanal, comparación con la semana anterior, indicadores por área y nota para un especialista (Central, Gym, Nutri, Vida, Pedagogo, Derma).
 - Botón **Copiar** con tres caminos: portapapeles moderno, método alternativo y, si el navegador no deja, deja el texto seleccionado para copiarlo a mano.
