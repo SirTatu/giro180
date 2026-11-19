@@ -24,6 +24,10 @@ Un trigger impide editarlos o borrarlos. Para un cambio deliberado, en SQL Edito
 3. Registrarlo en `decision_log`.
 La app no ofrece este camino: es una barrera contra cambios accidentales o automáticos.
 
+## Exportación
+La lista de tablas exportables está en `js/core/exportar.js` (`TABLAS_EXPORT`, con su columna de orden para paginar).
+Cada migración que cree una tabla debe sumarla ahí; `tests/exportar.test.mjs` lee `sql/` y falla si falta alguna.
+
 ## Informes guardados (`saved_reports`)
 Se inserta una fila por cada vez que tocás «Guardar» en la pestaña Informes (no se sobrescribe: guardar dos veces crea dos filas).
 `report_type`: `general`, `diario`, `semanal`, `comparacion`, `areas` o `nota_<especialista>` (por ejemplo `nota_gym`).

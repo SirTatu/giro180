@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0 — Etapa 2C, hito 2C-3 (exportación de datos)
+- Nueva tarjeta **Exportar tus datos** en Ajustes. Dos pasos: «Preparar exportación» lee todas las tablas y después se descarga (cada descarga nace de un toque nuevo, lo que exigen los navegadores móviles).
+- **JSON completo** (copia exacta con conteos por tabla y versión de la app) y **CSV por tabla** pensado para Excel en español: separador «;», coma decimal y BOM UTF-8 (acentos correctos). Los textos que empiezan con = + - @ se prefijan con «'» en el CSV para que Excel no los ejecute como fórmulas; el JSON conserva el texto exacto.
+- En celulares aparece además «Compartir…» (menú del sistema, permite «Guardar en Archivos»).
+- **Lectura sin cortes silenciosos:** se pide el total exacto a la base y se sigue leyendo hasta completarlo (soporta el límite de 1000 filas por consulta y límites menores). Si falta el total o una página viene vacía, se cancela con error y no se genera ningún archivo.
+- Nuevo `js/core/exportar.js` (lógica pura) con `TABLAS_EXPORT`. Una prueba automática lee `sql/` y falla si alguna tabla creada en una migración no está en la lista: así ninguna tabla futura (Gym, Nutri, Vida, Estudio, Derma) puede quedar fuera del backup sin que se note.
+- 42 pruebas automáticas en total. Service Worker v0.7.0. Sin migración SQL.
+
 ## 0.6.0 — Etapa 2C, hito 2C-2 (pestaña «Informes»)
 - Nueva pestaña **Informes** en Central con los seis informes en Markdown para pegar en los chats de ChatGPT: INFORME GENERAL (≤ 15 líneas), registro diario consolidado (elegís el día), resumen semanal, comparación con la semana anterior, indicadores por área y nota para un especialista (Central, Gym, Nutri, Vida, Pedagogo, Derma).
 - Botón **Copiar** con tres caminos: portapapeles moderno, método alternativo y, si el navegador no deja, deja el texto seleccionado para copiarlo a mano.
