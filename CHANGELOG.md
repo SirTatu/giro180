@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 — Etapa 2C, hito 2C-2 (pestaña «Informes»)
+- Nueva pestaña **Informes** en Central con los seis informes en Markdown para pegar en los chats de ChatGPT: INFORME GENERAL (≤ 15 líneas), registro diario consolidado (elegís el día), resumen semanal, comparación con la semana anterior, indicadores por área y nota para un especialista (Central, Gym, Nutri, Vida, Pedagogo, Derma).
+- Botón **Copiar** con tres caminos: portapapeles moderno, método alternativo y, si el navegador no deja, deja el texto seleccionado para copiarlo a mano.
+- **Guardar** guarda el informe en `saved_reports`; la lista «Informes guardados» (últimos 20) permite verlos, copiarlos y eliminarlos.
+- `armarInformes` en `js/core/informes.js` arma los seis textos juntos. Singular/plural correcto en los textos (`pl`: «1 día», «1 cumplido»), también en la pestaña Semana.
+- `datos.js`: `listarInformes`, `guardarInforme`, `eliminarInforme`. Estilos nuevos al final de `css/components.css`. 30 pruebas automáticas en total.
+- Service Worker v0.6.0. Sin migración SQL.
+
 ## 0.5.0 — Etapa 2C, hito 2C-1 (pestaña «Semana»: revisión semanal y comparación)
 - Nueva pestaña **Semana** en Central: navegación entre semanas (no deja ir a semanas futuras), cumplimiento / registrado / sin registrar, comparación con la semana anterior (en curso: mismos días de ambas semanas), ánimo y energía, indicadores por área con cambio, detalle por hábito y prioridades que regían en esa semana.
 - Revisión semanal: resumen y decisiones, guardadas en `weekly_reviews` (una fila por semana) junto con una foto JSON de los indicadores. Avisa si cambiás de semana con texto sin guardar.
