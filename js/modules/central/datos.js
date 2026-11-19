@@ -123,12 +123,3 @@ export const leerRevision = (weekStart) =>
 
 export const guardarRevision = (campos) =>
   supabase.from('weekly_reviews').upsert(campos, { onConflict: 'user_id,week_start' }).select().single().then(ok);
-
-// ---- Informes guardados ----
-export const listarInformes = (limite = 20) =>
-  supabase.from('saved_reports').select('*').order('created_at', { ascending: false }).limit(limite).then(ok);
-
-export const guardarInforme = (campos) =>
-  supabase.from('saved_reports').insert(campos).select().single().then(ok);
-
-export const eliminarInforme = (id) => supabase.from('saved_reports').delete().eq('id', id).then(ok);

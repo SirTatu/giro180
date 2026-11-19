@@ -3,7 +3,6 @@ import { h } from '../../core/dom.js';
 import { renderPanel } from './panel.js';
 import { renderHoy } from './hoy.js';
 import { renderSemana } from './semana.js';
-import { renderInformes } from './informes.js';
 import { renderHabitos } from './habitos.js';
 import { renderPlan } from './plan.js';
 import { renderAjustes } from './ajustes.js';
@@ -12,7 +11,6 @@ const TABS = [
   { id: 'panel', nombre: 'Panel', render: renderPanel },
   { id: 'hoy', nombre: 'Hoy', render: renderHoy },
   { id: 'semana', nombre: 'Semana', render: renderSemana },
-  { id: 'informes', nombre: 'Informes', render: renderInformes },
   { id: 'habitos', nombre: 'Hábitos', render: renderHabitos },
   { id: 'plan', nombre: 'Plan', render: renderPlan },
   { id: 'ajustes', nombre: 'Ajustes', render: renderAjustes }
