@@ -1,6 +1,7 @@
 // Acceso a la base de datos para Central. Todas las funciones lanzan error si Supabase falla.
 import { supabase } from '../../supabase.js';
 import { sumarDias } from '../../core/fechas.js';
+import { paginar } from '../../core/exportar.js';
 
 const ok = ({ data, error }) => { if (error) throw error; return data; };
 
@@ -123,3 +124,22 @@ export const leerRevision = (weekStart) =>
 
 export const guardarRevision = (campos) =>
   supabase.from('weekly_reviews').upsert(campos, { onConflict: 'user_id,week_start' }).select().single().then(ok);
+
+// ---- Informes guardados ----
+export const listarInformes = (limite = 20) =>
+  supabase.from('saved_reports').select('*').order('created_at', { ascending: false }).limit(limite).then(ok);
+
+export const guardarInforme = (campos) =>
+  supabase.from('saved_reports').insert(campos).select().single().then(ok);
+
+export const eliminarInforme = (id) => supabase.from('saved_reports').delete().eq('id', id).then(ok);
+
+// ---- Exportación ----
+// Lee TODAS las filas de una tabla (varias consultas si hace falta). Pide el total exacto a la base
+// y verifica que llegaron todas; si no, lanza un error en vez de entregar datos incompletos.
+export const leerTodaLaTabla = (tabla, orden = 'id') => paginar(async (desde, hasta) => {
+  const { data, error, count } = await supabase.from(tabla)
+    .select('*', { count: 'exact' }).order(orden).range(desde, hasta);
+  if (error) throw error;
+  return { filas: data ?? [], total: count };
+});

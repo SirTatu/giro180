@@ -2,6 +2,7 @@
 import { h } from '../../core/dom.js';
 import { APP_VERSION } from '../../version.js';
 import * as D from './datos.js';
+import { renderExportar } from './exportar.js';
 
 export async function renderAjustes(cont, ctx) {
   const { session, signOut } = ctx;
@@ -47,6 +48,7 @@ export async function renderAjustes(cont, ctx) {
       h('label', {}, 'Horas efectivas mínimas por noche', horas),
       h('label', {}, 'Días seguidos por debajo del mínimo que disparan la alerta', diasAlerta),
       h('div', { class: 'acciones' }, guardar, ok)),
+    renderExportar(),
     h('div', { class: 'card' },
       h('p', {}, h('span', { class: 'dot ok' }), 'Sesión: ' + session.user.email),
       h('p', {}, punto, estadoBD)),

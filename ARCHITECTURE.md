@@ -15,7 +15,7 @@
 
 ## Estructura
 - `js/main.js` arranque · `js/auth.js` sesión · `js/supabase.js` cliente · `js/router.js` navegación por hash
-- `js/core/` lógica pura sin pantalla: fechas, **estados (regla de los 4 estados)**, **informes** (períodos, comparación y textos Markdown), constantes, helper DOM. Con pruebas en `tests/`.
+- `js/core/` lógica pura sin pantalla: fechas, **estados (regla de los 4 estados)**, **informes** (períodos, comparación y textos Markdown), **exportar** (tablas, CSV/JSON y paginación segura), constantes, helper DOM. Con pruebas en `tests/`.
 - `js/views/` pantallas generales (login, estructura) · `js/modules/<modulo>/` cada módulo
 - `sql/` migraciones numeradas, se ejecutan a mano en Supabase
 
