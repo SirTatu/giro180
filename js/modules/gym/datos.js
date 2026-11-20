@@ -63,3 +63,39 @@ export async function importar(resuelto) {
   }
   return { rutinas: guardadas.length, ejercicios: resuelto.ejerciciosNuevos.length };
 }
+
+// ---- Entrenamientos (hito 3-2) ----
+export const listarHabitosDefiniciones = () =>
+  supabase.from('habit_definitions').select('*').order('name').order('valid_from').then(ok);
+
+// Sesiones desde una fecha (más nuevas primero) o todas las de un día.
+export const listarSesiones = (desde) =>
+  supabase.from('workout_sessions').select('*').gte('performed_on', desde).order('performed_on', { ascending: false }).then(ok);
+export const sesionesDelDia = (fecha) =>
+  supabase.from('workout_sessions').select('*').eq('performed_on', fecha).order('created_at', { ascending: false }).then(ok);
+// Las últimas n sesiones ANTERIORES a una fecha (para «la última vez»).
+export const sesionesAnteriores = (antesDe, n = 20) =>
+  supabase.from('workout_sessions').select('*').lt('performed_on', antesDe).order('performed_on', { ascending: false }).limit(n).then(ok);
+
+// Series de varias sesiones, en tandas chicas para no pasar el límite de 1000 filas por consulta
+// ni el largo de la dirección. Si una tanda llega al límite, falla en vez de entregar datos cortados.
+export async function setsDe(sessionIds, tanda = 25) {
+  const todas = [];
+  for (let i = 0; i < sessionIds.length; i += tanda) {
+    const filas = await supabase.from('workout_sets').select('*').in('session_id', sessionIds.slice(i, i + tanda)).then(ok);
+    if (filas.length >= 1000) throw new Error('Demasiadas series en una consulta: se cancela para no mostrar datos incompletos.');
+    todas.push(...filas);
+  }
+  return todas;
+}
+
+// Guarda o reemplaza un entrenamiento completo en UNA transacción (función guardar_entrenamiento) y, si viene
+// habitId, marca ese día como cumplido en el mismo paso.
+export const guardarEntrenamiento = ({ sessionId = null, fecha, routineId = null, routineName = null, duracion = null, notas = null, sets, habitId = null }) =>
+  supabase.rpc('guardar_entrenamiento', {
+    p_session_id: sessionId, p_performed_on: fecha, p_routine_id: routineId, p_routine_name: routineName,
+    p_duration_min: duracion, p_notes: notas, p_sets: sets, p_habit_id: habitId
+  }).then(ok);
+
+// Borra un entrenamiento y sus series. NO desmarca el hábito «Entrenar» (decisión tomada).
+export const borrarSesion = (id) => supabase.from('workout_sessions').delete().eq('id', id).then(ok);

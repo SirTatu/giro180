@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.10.0 — Etapa 3, hito 3-2 (Gym: registrar entrenamientos, historial y progresión)
+- Pestañas nuevas en Gym: **Entrenar** (ahora la pantalla inicial) e **Historial**. Sin migración SQL: usa las tablas y la función `guardar_entrenamiento` de la 003.
+- Entrenar: elegís fecha (por defecto hoy) y la rutina se sugiere según el día de la semana. Cada ejercicio muestra su objetivo (series × repeticiones) y «la última vez» (peso y repeticiones de cada serie). Cargás peso (acepta coma decimal) y repeticiones de **cada serie**, con totales en vivo por ejercicio y del día: series, repeticiones y volumen (peso × repeticiones).
+- La última vez se muestra como sugerencia gris (placeholder) y con el botón «Copiar la última vez»: nunca se guarda como dato sin que lo confirmes. Una serie con todo vacío no cuenta.
+- Solo por ese día podés: **reemplazar** un ejercicio por otro, **saltearlo** o **agregar un ejercicio extra**. La rutina no se modifica. Un ejercicio salteado simplemente no deja series (no es un incumplimiento ni un estado nuevo).
+- Series sin peso (peso corporal): cuentan en series y repeticiones, no suman al volumen, y se avisa cuántas son.
+- Guardar usa `guardar_entrenamiento` (una transacción) y marca el hábito «Entrenar» de ese día como cumplido (día no programado = extra). El hábito se identifica sin tocar el bloqueado: hábito de Gym de tipo sí/no, preferentemente con nombre «entrenar/gimnasio» y luego el bloqueado; se usa la **versión vigente ese día**. Si no lo encuentra, el entrenamiento se guarda igual y la pantalla avisa que no se marcó nada.
+- Editar un día ya guardado reemplaza la sesión (no duplica). Al editar, el objetivo de cada ejercicio sale de la foto guardada en sus series, no de la rutina actual, así volver a guardar no reescribe el historial. Se asume un entrenamiento por día en la pantalla (si hubiera más, se edita el más reciente).
+- Historial: período (30/90/180 días), resumen por semana (lunes a domingo), progresión por ejercicio (series, mejor serie, volumen y cambio de volumen contra la vez anterior; la primera dice «sin base de comparación»), lista de entrenamientos con detalle, Editar y Borrar. Borrar un entrenamiento NO desmarca el hábito.
+- Nuevo `js/core/entrenos.js` con toda la lógica (números, validación, totales, bloques, última vez, semana, progresión, hábito) y `tests/entrenos.test.mjs` (14 pruebas). Total: 71 pruebas.
+- Service Worker v0.10.0.
+
 ## 0.9.0 — Etapa 3, hito 3-1 (Gym: ejercicios, rutinas e importador)
 - Módulo Gym con tres pestañas: **Rutinas**, **Ejercicios** e **Importar** (el registro de entrenamientos llega en el 3-2). Sin migración SQL.
 - Rutinas: crear, renombrar, día sugerido, notas, archivar/desarchivar; dentro de cada rutina, agregar ejercicios (del catálogo o creándolos ahí mismo), cambiar de ejercicio, editar series × repeticiones mín./máx. y nota, reordenar (↑ ↓) y quitar. Cambiar o quitar no altera lo ya registrado (cada serie y sesión guardan su foto).
