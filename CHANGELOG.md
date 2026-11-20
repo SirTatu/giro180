@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.0 — Etapa 3, hito 3-1 (Gym: ejercicios, rutinas e importador)
+- Módulo Gym con tres pestañas: **Rutinas**, **Ejercicios** e **Importar** (el registro de entrenamientos llega en el 3-2). Sin migración SQL.
+- Rutinas: crear, renombrar, día sugerido, notas, archivar/desarchivar; dentro de cada rutina, agregar ejercicios (del catálogo o creándolos ahí mismo), cambiar de ejercicio, editar series × repeticiones mín./máx. y nota, reordenar (↑ ↓) y quitar. Cambiar o quitar no altera lo ya registrado (cada serie y sesión guardan su foto).
+- Ejercicios: alta, edición, grupo muscular (se cambia directo desde la lista), archivar/desarchivar, buscador y filtros.
+- Importar desde texto pegado: parser puro (`js/core/gym.js`), vista previa **editable** y recién ahí se guarda. Una línea de título por rutina (con el día) y un ejercicio por línea («nombre 4 x 6-8»). Soporta viñetas, «×», rangos con guion o «a», y formato en una línea separado por «·». Alternativas («o», «(o …)») quedan como nota. Lo que no entiende se lista como error: nunca se descarta en silencio.
+- Unificación de ejercicios: coincidencia exacta o con error de tipeo → se une con el existente (marcado para revisar); nombre que contiene a otro → solo se sugiere, nunca se une solo. El nombre de la rutina es el título completo (evita choques entre dos rutinas del mismo grupo en días distintos).
+- La importación no es atómica entre rutinas: si una falla, se deshace esa rutina y se informa cuáles ya se guardaron.
+- Nueva `tests/gym.test.mjs` (14 pruebas, ejemplos inventados) y `tests/exportar.test.mjs` reescrita (8 pruebas; la anterior no estaba en el repo).
+- Service Worker v0.9.0.
+
 ## 0.8.0 — Etapa 3, hito 3-0 (migración de Gym y Nutri, sin cambios visibles)
 - `sql/003_gym_nutri.sql`: tablas `exercises`, `routines`, `routine_exercises`, `workout_sessions`, `workout_sets` y `meals`, con RLS (misma plantilla que 001) y trigger de `updated_at`.
 - Función `guardar_entrenamiento`: guarda o reemplaza un entrenamiento con todas sus series en UNA transacción (o se guarda todo o nada) y, si se le pasa el hábito, marca ese día como cumplido en la misma transacción.

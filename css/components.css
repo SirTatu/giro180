@@ -99,8 +99,6 @@ details summary { cursor: pointer; color: var(--muted); }
   color: var(--text); text-decoration: none; display: flex; flex-direction: column; gap: 4px; font-size: .9rem; }
 .acceso span { font-size: 1.4rem; }
 
-/* ---------- Etapa 2C: informes ---------- */
-.informe-area { margin: 10px 0 0; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: .85rem; line-height: 1.45; }
-.card.pad .acciones { margin-top: 10px; }
-.card.pad select { margin-top: 8px; }
+/* Gym (hito 3-1) */
+.tres-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.aviso { color: var(--warn); margin: 0; font-size: .85rem; }

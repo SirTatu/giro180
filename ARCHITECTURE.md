@@ -15,14 +15,17 @@
 
 ## Estructura
 - `js/main.js` arranque · `js/auth.js` sesión · `js/supabase.js` cliente · `js/router.js` navegación por hash
-- `js/core/` lógica pura sin pantalla: fechas, **estados (regla de los 4 estados)**, **informes** (períodos, comparación y textos Markdown), **exportar** (tablas, CSV/JSON y paginación segura), constantes, helper DOM. Con pruebas en `tests/`.
+- `js/core/` lógica pura sin pantalla: fechas, **estados (regla de los 4 estados)**, **informes** (períodos, comparación y textos Markdown), constantes, helper DOM, **gym** (nombres, objetivos series × reps, parser e importador de rutinas, coincidencias entre ejercicios). Con pruebas en `tests/`.
 - `js/views/` pantallas generales (login, estructura) · `js/modules/<modulo>/` cada módulo
+- `js/modules/gym/`: `index.js` (pestañas), `rutinas.js`, `ejercicios.js`, `importar.js`, `datos.js` (consultas a Supabase), `ui.js`. Mismo patrón que Central: `render(cont, ctx)`, token anti-respuestas viejas, error con Reintentar.
 - `sql/` migraciones numeradas, se ejecutan a mano en Supabase
 
 ## Decisiones
 - Navegación por hash (`#/gym`) porque GitHub Pages no tiene rutas de servidor.
 - Email + contraseña (no magic link): la sesión de la app instalada en iPhone es independiente de Safari.
 - Registrar datos requiere conexión (cola offline: mejora futura).
+
+- Gym: rutinas y ejercicios se archivan, no se borran. El importador nunca une ejercicios solo por parecerse en nombre más de lo seguro: exacto o error de tipeo → se une y se marca; «uno contiene al otro» → solo se sugiere.
 
 ## Reglas de código
 - Todo texto de usuario se muestra con `h()` (textContent), nunca con innerHTML.
