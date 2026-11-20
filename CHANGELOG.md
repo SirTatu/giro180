@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.0 — Etapa 3, hito 3-3 (Gym: pasos y evolución corporal)
+- Pestañas nuevas en Gym: **Pasos** y **Cuerpo**. Sin migración SQL.
+- Pasos: son un hábito de cantidad (módulo Gym, tipo cantidad, nombre con «paso»); se registra en `habit_logs` igual que en Central → Hoy y el status se evalúa contra la meta vigente ese día. Si todavía no existe el hábito, la pantalla explica cómo crearlo en Central → Hábitos (no se crea solo). Muestra la meta, el estado del día (los cuatro estados, decididos por `estados.js`), resumen de 7 y 30 días (cumplidos, incumplidos, sin registrar, % sobre días registrados, cobertura, promedio y mejor día) y los últimos 14 días. Los días sin registro NO cuentan como 0 en el promedio y NO son incumplimiento. Se puede editar cualquier día y quitar un registro.
+- Cuerpo: peso y cintura en `body_measurements` (una fila por día, una sola fuente para Gym y Nutri; el acceso a datos quedó en `js/modules/compartido/medidas.js` para que Nutri lo reutilice). Alta, edición y borrado por fecha, con peso o cintura (alcanza con uno).
+- Tendencia en números, sin gráficos: última medición (y hace cuántos días), promedio de los últimos 7 días contra los 7 anteriores, cambio en el período (30/90/180 días) con mínimo y máximo, ritmo semanal estimado (regresión lineal; solo con 3+ mediciones que abarquen 7+ días), promedio por semana con su cambio. Todo lo que no se puede calcular por falta de datos dice «no hay base de comparación» o «sin datos suficientes»; nunca 0.
+- Nuevo `js/core/cuerpo.js` (lógica pura) y `tests/cuerpo.test.mjs` (8 pruebas). `buscarHabitoEntrenar` se generalizó a `buscarHabitoDeGym` (en `entrenos.js`) y se usa también para Pasos. Total: 79 pruebas.
+- Service Worker v0.11.0.
+
 ## 0.10.0 — Etapa 3, hito 3-2 (Gym: registrar entrenamientos, historial y progresión)
 - Pestañas nuevas en Gym: **Entrenar** (ahora la pantalla inicial) e **Historial**. Sin migración SQL: usa las tablas y la función `guardar_entrenamiento` de la 003.
 - Entrenar: elegís fecha (por defecto hoy) y la rutina se sugiere según el día de la semana. Cada ejercicio muestra su objetivo (series × repeticiones) y «la última vez» (peso y repeticiones de cada serie). Cargás peso (acepta coma decimal) y repeticiones de **cada serie**, con totales en vivo por ejercicio y del día: series, repeticiones y volumen (peso × repeticiones).

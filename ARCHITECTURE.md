@@ -15,9 +15,9 @@
 
 ## Estructura
 - `js/main.js` arranque · `js/auth.js` sesión · `js/supabase.js` cliente · `js/router.js` navegación por hash
-- `js/core/` lógica pura sin pantalla: fechas, **estados (regla de los 4 estados)**, **informes** (períodos, comparación y textos Markdown), constantes, helper DOM, **gym** (nombres, objetivos series × reps, parser e importador de rutinas, coincidencias entre ejercicios), **entrenos** (series, totales, volumen, última vez, resumen semanal, progresión, hábito «Entrenar»). Con pruebas en `tests/`.
+- `js/core/` lógica pura sin pantalla: fechas, **estados (regla de los 4 estados)**, **informes** (períodos, comparación y textos Markdown), constantes, helper DOM, **gym** (nombres, objetivos series × reps, parser e importador de rutinas, coincidencias entre ejercicios), **cuerpo** (pasos y tendencias de peso y cintura), **entrenos** (series, totales, volumen, última vez, resumen semanal, progresión, hábito «Entrenar»). Con pruebas en `tests/`.
 - `js/views/` pantallas generales (login, estructura) · `js/modules/<modulo>/` cada módulo
-- `js/modules/gym/`: `index.js` (pestañas), `entrenar.js`, `historial.js`, `rutinas.js`, `ejercicios.js`, `importar.js`, `datos.js` (consultas a Supabase), `ui.js`. Mismo patrón que Central: `render(cont, ctx)`, token anti-respuestas viejas, error con Reintentar.
+- `js/modules/compartido/medidas.js` (peso y cintura, compartido Gym/Nutri), `js/modules/gym/`: `index.js` (pestañas), `pasos.js`, `cuerpo.js`, `entrenar.js`, `historial.js`, `rutinas.js`, `ejercicios.js`, `importar.js`, `datos.js` (consultas a Supabase), `ui.js`. Mismo patrón que Central: `render(cont, ctx)`, token anti-respuestas viejas, error con Reintentar.
 - `sql/` migraciones numeradas, se ejecutan a mano en Supabase
 
 ## Decisiones
@@ -37,3 +37,8 @@
 - Cada serie guarda una foto del objetivo; al editar un día guardado se conserva esa foto (`bloquesIniciales`), y el nombre de la rutina de la sesión tampoco se reescribe.
 - El volumen suma solo series con peso. Las series sin peso se cuentan aparte.
 - Las consultas de series se hacen por tandas de 25 sesiones y fallan si una tanda llega a 1000 filas (límite del servidor), en lugar de mostrar datos cortados.
+
+## Pasos y evolución corporal (Gym)
+- Los pasos son un hábito de cantidad: su estado lo decide `estados.js`; la pantalla no tiene reglas propias de cumplimiento.
+- Peso y cintura viven en `body_measurements` (una fila por día). Nutri debe usar `js/modules/compartido/medidas.js`, no duplicar el acceso.
+- Una tendencia sin datos suficientes devuelve `null` (se muestra «sin base de comparación»); nunca 0.

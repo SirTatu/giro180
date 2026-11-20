@@ -18,8 +18,8 @@
 ## Etapa 3 — Gym y Nutri
 - [x] 3-0 Migración SQL 003 (tablas) + prueba de seguridad 004 (ejecutadas y confirmadas por el usuario)
 - [x] 3-1 Gym: ejercicios y rutinas + importador (v0.9.0; el usuario continuó al 3-2)
-- [ ] 3-2 Gym: registrar entrenamiento, historial y progresión (entregado en v0.10.0; falta que el usuario lo pruebe)
-- [ ] 3-3 Gym: pasos (hábito de cantidad) y evolución corporal (peso y cintura, tendencia en números)
+- [x] 3-2 Gym: registrar entrenamiento, historial y progresión (v0.10.0; confirmado por el usuario)
+- [ ] 3-3 Gym: pasos y evolución corporal (entregado en v0.11.0; falta que el usuario lo pruebe)
 - [ ] 3-4 Nutri: comidas con proteína por comida, agua, peso y cintura
 - [ ] 3-5 Informes: sumar Gym y Nutri al INFORME GENERAL, indicadores, notas de especialistas y Panel
 - Decisiones abiertas para el hito indicado:
@@ -31,6 +31,8 @@
 ## Ideas / pendientes
 - Importar / restaurar desde el JSON exportado (hoy la exportación es solo copia de seguridad de lectura)
 - Al crear tablas nuevas en cada etapa: sumarlas a `TABLAS_EXPORT` (js/core/exportar.js); la prueba automática avisa si se olvida
+- Pasos: crear el hábito de pasos desde la propia pestaña (hoy hay que crearlo en Central → Hábitos)
+- Cuerpo: la tendencia se calcula con las mediciones de los últimos 180 días + 14; no hay vista de todo el historial
 - Registro de entrenamientos: un solo entrenamiento por día en la pantalla; permitir varios si hace falta
 - Orden de los ejercicios al editar un día guardado (la base no guarda el orden): hoy sigue el de la rutina y los extras al final
 - Importar rutinas de forma atómica (función SQL) en lugar de rutina por rutina con reversión

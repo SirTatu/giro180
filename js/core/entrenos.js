@@ -195,24 +195,27 @@ export function progresionEjercicio(sesiones, sets, exerciseId) {
   });
 }
 
-// ---------- hábito «Entrenar» ----------
-// Identifica el hábito de entrenar SIN tocarlo: de Gym, de tipo sí/no; si hay varios se prefiere el de nombre
-// «entrenar/gimnasio» y luego el bloqueado. Devuelve { version, motivo, programado } con la VERSIÓN vigente ese día.
+// ---------- hábitos de Gym (Entrenar, Pasos) ----------
+// Identifica un hábito de Gym SIN tocarlo: del módulo Gym y del tipo pedido; si hay varios se prefiere el de nombre
+// esperado y luego el bloqueado. Devuelve { version, motivo, programado } con la VERSIÓN vigente ese día.
 // motivo: null si se encontró · 'sin_habito' · 'ambiguo' · 'sin_version_vigente'.
-export function buscarHabitoEntrenar(defs, fecha) {
+export function buscarHabitoDeGym(defs, fecha, kind, patronNombre) {
   let series = [...agruparPorSerie(defs).values()].filter((v) => {
     const u = v[v.length - 1];
-    return u.module === 'gym' && u.kind === 'boolean';
+    return u.module === 'gym' && u.kind === kind;
   });
-  const porNombre = series.filter((v) => /entren|gimnas/.test(normalizar(v[v.length - 1].name)));
+  const porNombre = series.filter((v) => patronNombre.test(normalizar(v[v.length - 1].name)));
   if (porNombre.length) series = porNombre;
   if (series.length > 1) {
     const bloq = series.filter((v) => v.some((x) => x.locked));
     if (bloq.length) series = bloq;
   }
-  if (!series.length) return { version: null, motivo: 'sin_habito', programado: false };
-  if (series.length > 1) return { version: null, motivo: 'ambiguo', programado: false };
+  if (!series.length) return { version: null, motivo: 'sin_habito', programado: false, versiones: [] };
+  if (series.length > 1) return { version: null, motivo: 'ambiguo', programado: false, versiones: [] };
   const version = versionVigente(series[0], fecha);
-  if (!version) return { version: null, motivo: 'sin_version_vigente', programado: false };
-  return { version, motivo: null, programado: version.scheduled_days.includes(diaISO(fecha)) };
+  if (!version) return { version: null, motivo: 'sin_version_vigente', programado: false, versiones: series[0] };
+  return { version, motivo: null, programado: version.scheduled_days.includes(diaISO(fecha)), versiones: series[0] };
 }
+
+// «Entrenar»: hábito de Gym de tipo sí/no (nombre entrenar / gimnasio).
+export const buscarHabitoEntrenar = (defs, fecha) => buscarHabitoDeGym(defs, fecha, 'boolean', /entren|gimnas/);

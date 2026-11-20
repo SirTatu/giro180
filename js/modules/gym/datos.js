@@ -99,3 +99,11 @@ export const guardarEntrenamiento = ({ sessionId = null, fecha, routineId = null
 
 // Borra un entrenamiento y sus series. NO desmarca el hábito «Entrenar» (decisión tomada).
 export const borrarSesion = (id) => supabase.from('workout_sessions').delete().eq('id', id).then(ok);
+
+// ---- Pasos: son un hábito de cantidad; el registro vive en habit_logs (igual que en Central → Hoy) ----
+export const logsEntre = (desde, hasta) =>
+  supabase.from('habit_logs').select('*').gte('log_date', desde).lte('log_date', hasta).then(ok);
+// status se calcula contra la meta de la versión vigente ESE día (así un cambio futuro de meta no altera el pasado).
+export const guardarLogPasos = ({ habit_id, log_date, status, value }) =>
+  supabase.from('habit_logs').upsert({ habit_id, log_date, status, value }, { onConflict: 'habit_id,log_date' }).select().single().then(ok);
+export const borrarLogPasos = (id) => supabase.from('habit_logs').delete().eq('id', id).then(ok);
