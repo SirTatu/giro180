@@ -57,3 +57,7 @@ Tablas de Gym, Nutri, Vida, Estudio y Derma: se crean en su etapa (migraciones 0
 La app agrega una fila a `decision_log` al: crear o cerrar una prioridad; crear, modificar, lograr, descartar o reactivar un objetivo.
 Las modificaciones de objetivos guardan qué cambió (título y fecha objetivo, antes → después).
 `decision_log` no permite editar ni borrar (solo select e insert).
+
+## Nutri: comidas, proteína y cierre del día (v0.12.0, sin migración)
+`meals`: una fila por comida; `protein_g` NULL = no cargada. La meta de proteína es un hábito de cantidad (módulo Nutri, nombre con «Proteína», unidad g).
+El registro del día en `habit_logs` guarda en `value` el total de proteína y en `note` quién lo decidió: `auto-proteina` (llegó a la meta, lo marca la app y puede quitarlo si dejás de llegar) o `cierre-dia` (cierre manual). Cualquier otro registro se trata como decisión manual.

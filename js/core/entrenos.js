@@ -199,13 +199,18 @@ export function progresionEjercicio(sesiones, sets, exerciseId) {
 // Identifica un hábito de Gym SIN tocarlo: del módulo Gym y del tipo pedido; si hay varios se prefiere el de nombre
 // esperado y luego el bloqueado. Devuelve { version, motivo, programado } con la VERSIÓN vigente ese día.
 // motivo: null si se encontró · 'sin_habito' · 'ambiguo' · 'sin_version_vigente'.
-export function buscarHabitoDeGym(defs, fecha, kind, patronNombre) {
+export const buscarHabitoDeGym = (defs, fecha, kind, patronNombre) => buscarHabitoDeModulo(defs, fecha, 'gym', kind, patronNombre);
+
+// Igual, para cualquier módulo (Nutri usa módulo 'nutri': proteína y agua).
+// estricto: si ninguno tiene el nombre esperado, NO adivina (Nutri: proteína y agua son los dos de cantidad).
+export function buscarHabitoDeModulo(defs, fecha, modulo, kind, patronNombre, estricto = false) {
   let series = [...agruparPorSerie(defs).values()].filter((v) => {
     const u = v[v.length - 1];
-    return u.module === 'gym' && u.kind === kind;
+    return u.module === modulo && u.kind === kind;
   });
   const porNombre = series.filter((v) => patronNombre.test(normalizar(v[v.length - 1].name)));
   if (porNombre.length) series = porNombre;
+  else if (estricto) series = [];
   if (series.length > 1) {
     const bloq = series.filter((v) => v.some((x) => x.locked));
     if (bloq.length) series = bloq;

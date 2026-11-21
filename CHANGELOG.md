@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0 — Etapa 3, hito 3-4a (Nutri: comidas y proteína)
+- Módulo **Nutri** con dos pestañas: **Hoy** e **Historial** (agua y Cuerpo llegan en el 3-4b). Sin migración SQL: usa la tabla `meals` de la 003 y `habit_logs`.
+- Hoy: elegís fecha, cargás comidas (tipo, qué comiste, proteína opcional), editás y borrás. Muestra el total de proteína contra la meta de ese día y cuánto falta. Una comida sin proteína queda como **NULL (no cargada)**, nunca 0 g, y la pantalla avisa cuántas comidas quedaron sin proteína.
+- Meta: hábito de cantidad del módulo Nutri con «Proteína» en el nombre (unidad g), que creás en Central → Hábitos. Sin ese hábito se pueden cargar comidas igual y la pantalla explica cómo crearlo. El hábito de agua no se confunde con el de proteína (búsqueda estricta por nombre).
+- **Cierre del día** (decisión aprobada): mientras el día está abierto y estés por debajo de la meta es «sin completar» (para `estados.js` sigue siendo «no registrado»); nunca se marca incumplido solo. Al llegar a la meta se marca **cumplido automáticamente** (`habit_logs.note = 'auto-proteina'`); si después editás o borrás comidas y dejás de llegar, ese marcado se quita. «Cerrar el día» (a mano) deja cumplido o incumplido contra la meta vigente (`note = 'cierre-dia'`). Si hay comidas sin proteína pide confirmación; sin comidas, o sin ninguna proteína cargada, no deja cerrar; los días futuros no se cierran. «Reabrir el día» borra el cierre y recalcula.
+- Un registro que no sea el automático (un cierre, o uno cargado desde Central → Hoy) la app **no lo modifica sola**: en un día cerrado, cambiar comidas no cambia el cierre hasta que reabras.
+- Historial: 7 o 30 días con cumplidos, incumplidos, sin completar, cumplimiento, promedio de proteína **solo sobre días con proteína cargada**, mejor día y lista de días con comidas (con «Ver / editar»).
+- Nuevo `js/core/nutri.js` (lógica pura), `js/modules/compartido/habitos.js` (hábitos y registros fuera de Central), `js/modules/nutri/` y `tests/nutri.test.mjs` (9 pruebas). `buscarHabitoDeGym` ahora se apoya en `buscarHabitoDeModulo` (mismo comportamiento para Gym). Total: 90 pruebas.
+- Service Worker v0.12.0.
+
 ## 0.11.0 — Etapa 3, hito 3-3 (Gym: pasos y evolución corporal)
 - Pestañas nuevas en Gym: **Pasos** y **Cuerpo**. Sin migración SQL.
 - Pasos: son un hábito de cantidad (módulo Gym, tipo cantidad, nombre con «paso»); se registra en `habit_logs` igual que en Central → Hoy y el status se evalúa contra la meta vigente ese día. Si todavía no existe el hábito, la pantalla explica cómo crearlo en Central → Hábitos (no se crea solo). Muestra la meta, el estado del día (los cuatro estados, decididos por `estados.js`), resumen de 7 y 30 días (cumplidos, incumplidos, sin registrar, % sobre días registrados, cobertura, promedio y mejor día) y los últimos 14 días. Los días sin registro NO cuentan como 0 en el promedio y NO son incumplimiento. Se puede editar cualquier día y quitar un registro.

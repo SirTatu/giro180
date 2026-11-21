@@ -42,3 +42,9 @@
 - Los pasos son un hábito de cantidad: su estado lo decide `estados.js`; la pantalla no tiene reglas propias de cumplimiento.
 - Peso y cintura viven en `body_measurements` (una fila por día). Nutri debe usar `js/modules/compartido/medidas.js`, no duplicar el acceso.
 - Una tendencia sin datos suficientes devuelve `null` (se muestra «sin base de comparación»); nunca 0.
+
+## Nutri (hito 3-4a)
+- `js/core/nutri.js` (lógica pura): validación de comidas y proteína, totales (solo suma lo cargado; sin nada cargado el total es null), decisiones de sincronización y de cierre, resumen de período. `tests/nutri.test.mjs`.
+- `js/modules/nutri/`: `index.js` (pestañas Hoy e Historial), `hoy.js`, `historial.js`, `datos.js` (tabla `meals`; falla si una consulta llega a 1000 filas), `ui.js`. `js/modules/compartido/habitos.js`: hábitos y registros para módulos que no son Central.
+- Estados: siguen decidiéndose en `estados.js`. «Sin completar» es solo una etiqueta de pantalla para un día con comidas y sin registro (para `estados.js` es «no registrado»). `habit_logs.note` distingue el cumplido automático (`auto-proteina`, la app lo recalcula) de una decisión manual (cierre u otro registro: la app no lo toca).
+- Proteína y agua son los dos hábitos de cantidad de Nutri: la búsqueda del hábito de proteína es estricta por nombre («prote») para no confundirlos.

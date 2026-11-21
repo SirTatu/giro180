@@ -19,16 +19,21 @@
 - [x] 3-0 Migración SQL 003 (tablas) + prueba de seguridad 004 (ejecutadas y confirmadas por el usuario)
 - [x] 3-1 Gym: ejercicios y rutinas + importador (v0.9.0; el usuario continuó al 3-2)
 - [x] 3-2 Gym: registrar entrenamiento, historial y progresión (v0.10.0; confirmado por el usuario)
-- [ ] 3-3 Gym: pasos y evolución corporal (entregado en v0.11.0; falta que el usuario lo pruebe)
-- [ ] 3-4 Nutri: comidas con proteína por comida, agua, peso y cintura
+- [x] 3-3 Gym: pasos y evolución corporal (v0.11.0; confirmado por el usuario)
+- [ ] 3-4 Nutri
+  - [ ] 3-4a Comidas y proteína por comida + cierre del día (v0.12.0, entregado; falta que el usuario lo pruebe)
+  - [ ] 3-4b Agua (meta en litros; carga en ml o L; botones rápidos y botellas configurables, con migración 005) y peso y cintura
 - [ ] 3-5 Informes: sumar Gym y Nutri al INFORME GENERAL, indicadores, notas de especialistas y Panel
 - Decisiones abiertas para el hito indicado:
   - 3-1: las rutinas NO van escritas en el código (el repo es público); se cargan pegando el texto en la app. Los ejercicios de nombre parecido los decide el usuario en la vista previa.
   - Ejercicio salteado: hoy no deja rastro (no hay filas). Si más adelante se quiere distinguir «salteado» de «no cargado», requiere una migración.
-  - 3-4: la proteína del día se suma de las comidas. Falta decidir cuándo un día cuenta como «no cumplido» (nunca automáticamente a mitad del día: sin cierre explícito del día, por debajo de la meta es «sin completar», no incumplimiento).
+  - 3-4: decidido: la proteína del día se suma de las comidas; sin cierre explícito, por debajo de la meta es «sin completar»; «Cerrar el día» es manual; el agua sigue la misma regla (3-4b).
   - Borrar un entrenamiento NO desmarca el hábito «Entrenar» de ese día (se corrige en Hoy). Evaluar si conviene automatizarlo.
 
 ## Ideas / pendientes
+- Nutri: un día cerrado no se recalcula solo al cambiar comidas (hay que reabrir y cerrar de nuevo)
+- Nutri: el hábito de proteína se crea a mano en Central → Hábitos (módulo Nutri, tipo cantidad, nombre con «Proteína»)
+- Nutri: el historial lee como máximo 1000 comidas por consulta y avisa si se llega al límite
 - Importar / restaurar desde el JSON exportado (hoy la exportación es solo copia de seguridad de lectura)
 - Al crear tablas nuevas en cada etapa: sumarlas a `TABLAS_EXPORT` (js/core/exportar.js); la prueba automática avisa si se olvida
 - Pasos: crear el hábito de pasos desde la propia pestaña (hoy hay que crearlo en Central → Hábitos)
