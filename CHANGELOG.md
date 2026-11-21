@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.13.0 — Etapa 3, hito 3-4b (Nutri: agua, botellas y Cuerpo)
+- **Migración SQL 005** (`sql/005_agua.sql`) y su prueba de seguridad `sql/006_test_rls_agua.sql` (16 comprobaciones). Dos tablas nuevas con RLS: `water_containers` (botellas con su volumen en ml; se archivan, no se borran) y `water_intakes` (una fila por toma; guarda una foto del nombre de la botella). Se suman a la exportación. **Orden obligatorio:** exportar respaldo → ejecutar 005 → ejecutar 006 (con tu User UID) → recién ahí subir los archivos de la app.
+- Pestaña **Agua**: botones rápidos (+250 ml, +500 ml, +1 L), un botón por cada botella tuya (un toque suma su volumen) y «otra cantidad» en **ml o L** (0,5 L = 500 ml). Total del día contra la meta, cuánto falta y la lista de tomas, con «Deshacer / borrar» en la última. Se puede cargar cualquier fecha.
+- Pestaña **Botellas**: alta, edición y archivo de recipientes (botella de la oficina, de casa, del gym, jarra, vaso, termo de mate...), con el volumen en ml o L. Cambiar o archivar una botella no altera las tomas ya cargadas.
+- **Meta en litros**: es un hábito de cantidad del módulo Nutri con «Agua» en el nombre y unidad «L» (también acepta «ml»), creado en Central → Hábitos. El registro del día se guarda en la unidad del hábito (por ejemplo 2,5 en L).
+- Mismo cierre del día que la proteína: por debajo de la meta es «sin completar» (nunca incumplido solo); al llegar se marca cumplido automático (`note = 'auto-agua'`) y se quita si dejás de llegar; «Cerrar el día» y «Reabrir el día» son a mano (`note = 'cierre-dia'`); un cierre no se modifica solo.
+- **Decisión que cambió:** antes se había dicho que el agua no tenía tabla. Hace falta guardar las tomas para poder tener un día «sin completar» sin escribir un incumplimiento (`habit_logs` solo admite cumplido o incumplido) y para poder deshacer una toma. La meta sigue siendo un hábito.
+- **Historial** de Nutri: ahora trae proteína y agua (cumplidos, incumplidos, sin completar, promedio solo sobre días con dato, mejor día) y los días con datos, con «Ver comidas» y «Ver agua».
+- Pestaña **Cuerpo** en Nutri: es la misma pantalla de Gym (peso y cintura en `body_measurements`, una sola fuente).
+- Nuevo `js/core/agua.js` y `tests/agua.test.mjs` (9 pruebas); `tests/sql.test.mjs` suma una prueba que exige que 006 cubra las tablas de 005 (la de exportación ya avisaba). Total: 100 pruebas. `traducirError` reconoce el nombre de botella repetido.
+- Service Worker v0.13.0.
+
 ## 0.12.0 — Etapa 3, hito 3-4a (Nutri: comidas y proteína)
 - Módulo **Nutri** con dos pestañas: **Hoy** e **Historial** (agua y Cuerpo llegan en el 3-4b). Sin migración SQL: usa la tabla `meals` de la 003 y `habit_logs`.
 - Hoy: elegís fecha, cargás comidas (tipo, qué comiste, proteína opcional), editás y borrás. Muestra el total de proteína contra la meta de ese día y cuánto falta. Una comida sin proteína queda como **NULL (no cargada)**, nunca 0 g, y la pantalla avisa cuántas comidas quedaron sin proteína.

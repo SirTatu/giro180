@@ -38,6 +38,7 @@ export function traducirError(e) {
   if (e?.code === '23505' || /duplicate key/i.test(m)) {
     if (/exercises_nombre_uq/.test(m)) return 'Ya existe un ejercicio con ese nombre.';
     if (/routines_nombre_uq/.test(m)) return 'Ya existe una rutina con ese nombre.';
+    if (/water_containers_nombre_uq/.test(m)) return 'Ya existe una botella con ese nombre.';
     return 'Ya existe un registro con esos datos.';
   }
   if (e?.code === '23503' || /foreign key/i.test(m)) return 'No se puede por estar en uso. Archivalo en lugar de borrarlo.';

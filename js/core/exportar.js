@@ -22,7 +22,10 @@ export const TABLAS_EXPORT = [
   { tabla: 'routine_exercises', orden: 'id', etiqueta: 'Gym: ejercicios de cada rutina' },
   { tabla: 'workout_sessions', orden: 'id', etiqueta: 'Gym: entrenamientos' },
   { tabla: 'workout_sets', orden: 'id', etiqueta: 'Gym: series' },
-  { tabla: 'meals', orden: 'id', etiqueta: 'Nutri: comidas' }
+  { tabla: 'meals', orden: 'id', etiqueta: 'Nutri: comidas' },
+  // Hito 3-4b (migración 005)
+  { tabla: 'water_containers', orden: 'id', etiqueta: 'Nutri: botellas' },
+  { tabla: 'water_intakes', orden: 'id', etiqueta: 'Nutri: tomas de agua' }
 ];
 
 // Formato del CSV pensado para Excel en español de Argentina (separador de listas «;» y coma decimal).

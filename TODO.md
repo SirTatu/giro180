@@ -21,8 +21,8 @@
 - [x] 3-2 Gym: registrar entrenamiento, historial y progresión (v0.10.0; confirmado por el usuario)
 - [x] 3-3 Gym: pasos y evolución corporal (v0.11.0; confirmado por el usuario)
 - [ ] 3-4 Nutri
-  - [ ] 3-4a Comidas y proteína por comida + cierre del día (v0.12.0, entregado; falta que el usuario lo pruebe)
-  - [ ] 3-4b Agua (meta en litros; carga en ml o L; botones rápidos y botellas configurables, con migración 005) y peso y cintura
+  - [x] 3-4a Comidas y proteína por comida + cierre del día (v0.12.0; confirmado por el usuario)
+  - [ ] 3-4b Agua (meta en litros; carga en ml o L; botones rápidos y botellas configurables, migración 005) y Cuerpo en Nutri (v0.13.0, entregado; falta que el usuario lo pruebe)
 - [ ] 3-5 Informes: sumar Gym y Nutri al INFORME GENERAL, indicadores, notas de especialistas y Panel
 - Decisiones abiertas para el hito indicado:
   - 3-1: las rutinas NO van escritas en el código (el repo es público); se cargan pegando el texto en la app. Los ejercicios de nombre parecido los decide el usuario en la vista previa.
@@ -31,6 +31,9 @@
   - Borrar un entrenamiento NO desmarca el hábito «Entrenar» de ese día (se corrige en Hoy). Evaluar si conviene automatizarlo.
 
 ## Ideas / pendientes
+- Agua: no hay orden manual de botellas (van por nombre); no se guarda la hora de cada toma más allá de su fecha de creación
+- Agua: el hábito se crea a mano en Central → Hábitos (módulo Nutri, tipo cantidad, nombre con «Agua», unidad L)
+- Nutri → Cuerpo importa la pantalla desde `modules/gym/cuerpo.js`; si crece, moverla a `compartido/`
 - Nutri: un día cerrado no se recalcula solo al cambiar comidas (hay que reabrir y cerrar de nuevo)
 - Nutri: el hábito de proteína se crea a mano en Central → Hábitos (módulo Nutri, tipo cantidad, nombre con «Proteína»)
 - Nutri: el historial lee como máximo 1000 comidas por consulta y avisa si se llega al límite

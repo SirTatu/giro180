@@ -64,7 +64,7 @@ export const aviso = (t) => t.sinProteina === 0 ? null
   : t.sinProteina === 1 ? '1 comida quedó sin proteína cargada.' : `${t.sinProteina} comidas quedaron sin proteína cargada.`;
 
 // ---------- estado del día y cierre ----------
-export const estaCerrado = (log) => !!log && log.note !== NOTA_AUTO;
+export const estaCerrado = (log, notaAuto = NOTA_AUTO) => !!log && log.note !== notaAuto;
 
 // Qué mostrar. estado: cumplido · incumplido · sin_completar (hay comidas, sin registro) · no_registrado (nada cargado).
 export function estadoProteina(log, t) {
@@ -74,12 +74,12 @@ export function estadoProteina(log, t) {
 
 // Después de cambiar comidas: ¿hay que escribir o quitar el registro automático?
 // Solo el cumplido automático es automático; nunca se marca «incumplido» solo. Un registro de cierre no se toca.
-export function decidirSincronizacion({ version, total, log }) {
+export function decidirSincronizacion({ version, total, log, notaAuto = NOTA_AUTO }) {
   if (!version) return { accion: 'ninguna' };
-  if (estaCerrado(log)) return { accion: 'ninguna' };
+  if (estaCerrado(log, notaAuto)) return { accion: 'ninguna' };
   if (total != null && total >= Number(version.target_value)) {
-    if (log && log.status === 'done' && Number(log.value) === total) return { accion: 'ninguna' };
-    return { accion: 'guardar', status: 'done', value: total, note: NOTA_AUTO };
+    if (log && log.status === 'done' && Number(log.value) === total && log.note === notaAuto) return { accion: 'ninguna' };
+    return { accion: 'guardar', status: 'done', value: total, note: notaAuto };
   }
   return log ? { accion: 'quitar' } : { accion: 'ninguna' };
 }

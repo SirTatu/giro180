@@ -61,3 +61,8 @@ Las modificaciones de objetivos guardan qué cambió (título y fecha objetivo, 
 ## Nutri: comidas, proteína y cierre del día (v0.12.0, sin migración)
 `meals`: una fila por comida; `protein_g` NULL = no cargada. La meta de proteína es un hábito de cantidad (módulo Nutri, nombre con «Proteína», unidad g).
 El registro del día en `habit_logs` guarda en `value` el total de proteína y en `note` quién lo decidió: `auto-proteina` (llegó a la meta, lo marca la app y puede quitarlo si dejás de llegar) o `cierre-dia` (cierre manual). Cualquier otro registro se trata como decisión manual.
+
+## Agua (migración 005, v0.13.0)
+`water_containers`: botellas (`name` único sin distinguir mayúsculas, `volume_ml` 1 a 20000, `archived`). `water_intakes`: una fila por toma (`drunk_on`, `ml` 1 a 10000, `container_id` que pasa a null si se borra la botella y `container_name` como foto). El total del día es la suma; sin tomas = no registrado, nunca 0.
+La meta es un hábito de cantidad (Nutri, «Agua», unidad L o ml). Su registro en `habit_logs.value` va en la unidad del hábito; `note` = `auto-agua` o `cierre-dia`.
+Cómo aplicarla: exportar respaldo → ejecutar `005_agua.sql` → ejecutar `006_test_rls_agua.sql` (con tu User UID) → subir la app.

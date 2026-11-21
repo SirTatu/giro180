@@ -97,3 +97,14 @@ test('los scripts de prueba mantienen el marcador del UID y cubren cada tabla nu
   const nums = [...prueba.matchAll(/'FALLO (\d+):/g)].map((m) => Number(m[1]));
   assert.deepEqual(nums, Array.from({ length: nums.length }, (_, i) => i + 1), 'los números de FALLO deben ser 1..N sin repetir');
 });
+
+test('005 (agua): su script de prueba 006 cubre cada tabla, tiene el marcador del UID y FALLO 1..N', () => {
+  const nueva = crudo['005_agua.sql'];
+  const prueba = crudo['006_test_rls_agua.sql'];
+  assert.match(prueba, /PEGAR-AQUI-TU-USER-UID/);
+  for (const m of nueva.matchAll(/create table(?: if not exists)? public\.(\w+)/gi)) {
+    assert.match(prueba, new RegExp(`public\\.${m[1]}\\b`), `006 no prueba la tabla ${m[1]}`);
+  }
+  const nums = [...prueba.matchAll(/'FALLO (\d+):/g)].map((m) => Number(m[1]));
+  assert.deepEqual(nums, Array.from({ length: nums.length }, (_, i) => i + 1), 'los números de FALLO deben ser 1..N sin repetir');
+});

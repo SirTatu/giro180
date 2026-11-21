@@ -48,3 +48,9 @@
 - `js/modules/nutri/`: `index.js` (pestañas Hoy e Historial), `hoy.js`, `historial.js`, `datos.js` (tabla `meals`; falla si una consulta llega a 1000 filas), `ui.js`. `js/modules/compartido/habitos.js`: hábitos y registros para módulos que no son Central.
 - Estados: siguen decidiéndose en `estados.js`. «Sin completar» es solo una etiqueta de pantalla para un día con comidas y sin registro (para `estados.js` es «no registrado»). `habit_logs.note` distingue el cumplido automático (`auto-proteina`, la app lo recalcula) de una decisión manual (cierre u otro registro: la app no lo toca).
 - Proteína y agua son los dos hábitos de cantidad de Nutri: la búsqueda del hábito de proteína es estricta por nombre («prote») para no confundirlos.
+
+## Agua, botellas y Cuerpo en Nutri (hito 3-4b)
+- `js/core/agua.js` (lógica pura): unidades (L/ml), validación, total del día, sincronización y cierre (misma regla que la proteína), resumen. `tests/agua.test.mjs`.
+- `js/modules/nutri/`: `agua.js` (tomas), `botellas.js` (recipientes), `historial.js` (proteína + agua), `datos.js` (tablas `water_containers` y `water_intakes`). La pestaña Cuerpo reutiliza `js/modules/gym/cuerpo.js`.
+- El total de agua del día es la suma de `water_intakes`; la meta es un hábito de cantidad (Nutri, nombre con «Agua»). `habit_logs.note`: `auto-agua` = cumplido automático (recalculable); `cierre-dia` = cierre manual (no se toca). Cada hábito reconoce solo su propia marca automática: el cumplido de proteína no se confunde con el de agua.
+- Las pantallas de Agua ignoran toques repetidos mientras una operación está en curso (evita tomas duplicadas).

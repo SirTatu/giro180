@@ -17,3 +17,20 @@ export async function comidasEntre(desde, hasta) {
 export const crearComida = (campos) => supabase.from('meals').insert(campos).select().single().then(ok);
 export const actualizarComida = (id, campos) => supabase.from('meals').update(campos).eq('id', id).select().single().then(ok);
 export const borrarComida = (id) => supabase.from('meals').delete().eq('id', id).then(ok);
+
+// ---------- agua: botellas y tomas (migración 005) ----------
+export const listarBotellas = () => supabase.from('water_containers').select('*').order('name', { ascending: true }).then(ok);
+export const crearBotella = (campos) => supabase.from('water_containers').insert(campos).select().single().then(ok);
+export const actualizarBotella = (id, campos) => supabase.from('water_containers').update(campos).eq('id', id).select().single().then(ok);
+
+export const tomasDelDia = (fecha) =>
+  supabase.from('water_intakes').select('*').eq('drunk_on', fecha).order('created_at', { ascending: true }).then(ok);
+
+export async function tomasEntre(desde, hasta) {
+  const filas = await supabase.from('water_intakes').select('*').gte('drunk_on', desde).lte('drunk_on', hasta)
+    .order('drunk_on', { ascending: true }).limit(LIMITE).then(ok);
+  if (filas.length >= LIMITE) throw new Error('Hay demasiadas tomas de agua en ese período para leerlas de una vez. Elegí un período más corto.');
+  return filas;
+}
+export const crearToma = (campos) => supabase.from('water_intakes').insert(campos).select().single().then(ok);
+export const borrarToma = (id) => supabase.from('water_intakes').delete().eq('id', id).then(ok);
