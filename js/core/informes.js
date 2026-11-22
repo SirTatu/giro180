@@ -5,6 +5,7 @@
 import { diaISO, sumarDias, rango, etiquetaLarga } from './fechas.js';
 import { NOMBRES_MODULO, ORDEN_MODULOS } from './constantes.js';
 import { ESTADO, estadoDia, logsDeSerie, resumenSerie, resumenGlobal } from './estados.js';
+import { fragmentosCortos, hayDatosArea, lineasArea, lineasComparacion, lineasDia } from './areas.js';
 
 // Chats especialistas. El Pedagogo cubre el módulo Estudio.
 export const ESPECIALISTAS = [
@@ -176,7 +177,7 @@ function lineaModulo(nombre, r, cmp) {
 }
 
 // 1) Registro diario consolidado
-export function registroDiarioMd({ fecha, filas, entrada }) {
+export function registroDiarioMd({ fecha, filas, entrada, extras = [] }) {
   const L = [`## Registro diario · ${etiquetaLarga(fecha)}`];
   if (!filas.length) L.push('- No había hábitos programados ese día.');
   let moduloActual = null;
@@ -189,6 +190,7 @@ export function registroDiarioMd({ fecha, filas, entrada }) {
   }
   const pend = filas.filter((f) => f.estado === ESTADO.NO_REGISTRADO).length;
   if (pend) L.push(`- _${pend} sin registrar: es dato faltante, no incumplimiento._`);
+  if (extras.length) { L.push('**Gym y Nutri (cargado ese día)**'); L.push(...extras); }
   const animo = entrada?.mood != null ? `${entrada.mood}/5` : 'sin registrar';
   const energia = entrada?.energy != null ? `${entrada.energy}/5` : 'sin registrar';
   L.push(`**Ánimo:** ${animo} · **Energía:** ${energia}`);
@@ -215,7 +217,7 @@ export function resumenSemanalMd(sem, { revision = null, prioridades = [] } = {}
 }
 
 // 3) Comparación con la semana anterior
-export function comparacionMd(sem) {
+export function comparacionMd(sem, areas = null) {
   const L = [
     '## Comparación con la semana anterior',
     `- Esta semana: ${textoPeriodo(sem.periodo)}`,
@@ -230,6 +232,7 @@ export function comparacionMd(sem) {
     const cm = sem.comparacion.porModulo.get(m);
     if (cm) L.push(`- ${NOMBRES_MODULO[m]}: ${fmtPct(cm.pct.actual)} vs ${fmtPct(cm.pct.anterior)} → ${fmtDelta(cm.pct.delta)}`);
   }
+  L.push(...lineasComparacion(areas));
   if (sem.anterior.total.cumplidos + sem.anterior.total.incumplidos === 0) {
     L.push('- _La semana anterior no tiene registros: no hay base de comparación (no es un 0 %)._');
   }
@@ -237,7 +240,7 @@ export function comparacionMd(sem) {
 }
 
 // 4) Indicadores por área
-export function indicadoresAreaMd(sem, series, logs) {
+export function indicadoresAreaMd(sem, series, logs, areas = null) {
   const L = [`## Indicadores por área · ${textoPeriodo(sem.periodo)}`];
   for (const m of ORDEN_MODULOS) {
     const r = sem.actual.porModulo.get(m);
@@ -249,6 +252,7 @@ export function indicadoresAreaMd(sem, series, logs) {
         L.push(`- ${una_linea(d.nombre)}: ${pl(d.cumplidos, 'cumplido', 'cumplidos')}, ${pl(d.incumplidos, 'no cumplido', 'no cumplidos')}${extra}`);
       }
     }
+    L.push(...lineasArea(areas, m, { incluirCuerpo: m === 'gym' }));
   }
   return L.join('\n');
 }
@@ -258,7 +262,7 @@ const REGLAS_FIJAS = {
   gym: 'Regla fija (innegociable, no modificar): entrenamiento 5 días por semana, de martes a sábado.'
 };
 
-export function notaEspecialistaMd(esp, sem, series, logs, { prioridades = [] } = {}) {
+export function notaEspecialistaMd(esp, sem, series, logs, { prioridades = [], areas = null } = {}) {
   const L = [`## Nota para ${esp.nombre} · ${textoPeriodo(sem.periodo)}`];
   if (REGLAS_FIJAS[esp.id]) L.push(`- ${REGLAS_FIJAS[esp.id]}`);
   for (const m of esp.modulos) {
@@ -270,11 +274,15 @@ export function notaEspecialistaMd(esp, sem, series, logs, { prioridades = [] } 
         L.push(`  - ${una_linea(d.nombre)}: ${pl(d.cumplidos, 'cumplido', 'cumplidos')}, ${pl(d.incumplidos, 'no cumplido', 'no cumplidos')}, ${d.noRegistrados} sin registrar`);
       }
     }
+    L.push(...lineasArea(areas, m));
   }
   const a = sem.animo.actual;
   L.push(`- Contexto general: ánimo ${fmtEscala(a.animo)}, energía ${fmtEscala(a.energia)} (${pl(a.dias, 'día', 'días')} con registro)`);
   if (prioridades.length) L.push(`- Prioridades vigentes: ${prioridades.map((p, i) => `${i + 1}) ${recortar(p, 60)}`).join(' · ')}`);
-  L.push('- Los datos de esta área en la app por ahora son solo hábitos; lo que no figura no fue registrado (no asumir incumplimiento).');
+  const conDatosReales = areas && esp.modulos.some((m) => m === 'gym' || m === 'nutri');
+  L.push(conDatosReales
+    ? '- Lo que no figura no fue registrado o no se pudo leer (no asumir incumplimiento). Promedios solo sobre días con dato.'
+    : '- Los datos de esta área en la app por ahora son solo hábitos; lo que no figura no fue registrado (no asumir incumplimiento).');
   return L.join('\n');
 }
 
@@ -285,7 +293,7 @@ export function limitarLineas(texto, max = MAX_LINEAS_GENERAL) {
 }
 
 // 6) INFORME GENERAL: máximo 15 líneas.
-export function informeGeneralMd(sem, { prioridades = [], revision = null } = {}) {
+export function informeGeneralMd(sem, { prioridades = [], revision = null, areas = null } = {}) {
   const t = sem.actual.total;
   const c = sem.comparacion.total;
   const L = [`# INFORME GENERAL · semana ${textoPeriodo(sem.periodo)}`];
@@ -298,12 +306,13 @@ export function informeGeneralMd(sem, { prioridades = [], revision = null } = {}
   const a = sem.animo.actual;
   L.push(`- **Ánimo:** ${fmtEscala(a.animo)} · **Energía:** ${fmtEscala(a.energia)} (${pl(a.dias, 'día', 'días')} con registro)`);
   L.push(`- **Prioridades:** ${prioridades.length ? prioridades.map((p, i) => `${i + 1}) ${recortar(p, 50)}`).join(' · ') : 'sin prioridades vigentes'}`);
-  const conDatos = ORDEN_MODULOS.filter((m) => sem.actual.porModulo.get(m)?.programados > 0);
+  const conDatos = ORDEN_MODULOS.filter((m) => sem.actual.porModulo.get(m)?.programados > 0 || hayDatosArea(areas, m));
   if (conDatos.length) L.push('- **Por área:**');
   for (const m of conDatos) {
     const r = sem.actual.porModulo.get(m);
     const cm = sem.comparacion.porModulo.get(m);
-    L.push(`  - ${NOMBRES_MODULO[m]}: ${fmtPct(r.pct)} (reg. ${fmtPct(r.cobertura)}) · ${fmtDelta(cm?.pct.delta)}`);
+    const base = r?.programados ? `${fmtPct(r.pct)} (reg. ${fmtPct(r.cobertura)}) · ${fmtDelta(cm?.pct.delta)}` : 'sin hábitos programados';
+    L.push(`  - ${NOMBRES_MODULO[m]}: ${[base, ...fragmentosCortos(areas, m)].join(' · ')}`);
   }
   const sinDatos = ORDEN_MODULOS.filter((m) => !conDatos.includes(m)).map((m) => NOMBRES_MODULO[m]);
   if (sinDatos.length) L.push(`- **Sin datos aún:** ${sinDatos.join(', ')}`);
@@ -314,15 +323,15 @@ export function informeGeneralMd(sem, { prioridades = [], revision = null } = {}
 // ---------- Todos los informes juntos ----------
 // Arma los seis textos de una vez. `fecha` es el día del registro diario; `especialista` es el id del chat
 // (si no existe, se usa Central). Es lo único que necesita la pantalla de Informes.
-export function armarInformes({ sem, series, logs, entradas = [], fecha, especialista, prioridades = [], revision = null }) {
+export function armarInformes({ sem, series, logs, entradas = [], fecha, especialista, prioridades = [], revision = null, areas = null, datosAreas = null }) {
   const esp = ESPECIALISTAS.find((e) => e.id === especialista) ?? ESPECIALISTAS[0];
   const entrada = entradas.find((e) => e.entry_date === fecha) ?? null;
   return {
-    general: informeGeneralMd(sem, { prioridades, revision }),
-    diario: registroDiarioMd({ fecha, filas: filasDelDia(series, logs, fecha), entrada }),
+    general: informeGeneralMd(sem, { prioridades, revision, areas }),
+    diario: registroDiarioMd({ fecha, filas: filasDelDia(series, logs, fecha), entrada, extras: datosAreas ? lineasDia({ fecha, datos: datosAreas }) : [] }),
     semanal: resumenSemanalMd(sem, { revision, prioridades }),
-    comparacion: comparacionMd(sem),
-    areas: indicadoresAreaMd(sem, series, logs),
-    especialista: notaEspecialistaMd(esp, sem, series, logs, { prioridades })
+    comparacion: comparacionMd(sem, areas),
+    areas: indicadoresAreaMd(sem, series, logs, areas),
+    especialista: notaEspecialistaMd(esp, sem, series, logs, { prioridades, areas })
   };
 }

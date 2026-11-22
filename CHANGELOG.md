@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.14.0 — Etapa 3, hito 3-5a (Informes con datos reales de Gym y Nutri)
+- Los informes ya no usan solo hábitos: leen entrenamientos, pasos, peso y cintura, comidas y agua. Sin migración SQL.
+- **INFORME GENERAL** (siempre 15 líneas o menos): la línea de Gym suma entrenos (con el período anterior), pasos por día y peso; la de Nutri suma proteína y agua por día. No agrega líneas: va en la misma línea del área. Un área con datos reales aparece aunque no tenga hábitos programados.
+- **Indicadores por área** y **notas para Gym y Nutri**: sesiones, series, volumen, progresión por ejercicio (cuántos mejoraron, bajaron, igual o sin base, con los 3 principales), pasos, peso y cintura (último valor, promedio de 7 días, cambio en 30 días), proteína y agua con meta y mejor día, y días con comidas sin proteína cargada. La nota de Gym conserva la regla fija de 5 días.
+- **Comparación semanal** y **Registro diario**: líneas de entrenos, volumen, pasos, proteína, agua y peso; el diario muestra solo lo cargado ese día.
+- Reglas: promedios solo sobre días con dato; sin base de comparación no es 0; un dato que no se cargó dice «sin registrar»; uno que no se pudo leer dice «no se pudieron leer» (en pantalla y en el texto) y no bloquea el resto. Si fallan los hábitos (lo esencial) se muestra el error con Reintentar, como antes.
+- Nuevo `js/core/areas.js` y `tests/areas.test.mjs` (15 pruebas). `informes.js` acepta datos opcionales: sin ellos, los textos son idénticos a los de la 0.13. Total: 115 pruebas.
+- Service Worker v0.14.0.
+
 ## 0.13.0 — Etapa 3, hito 3-4b (Nutri: agua, botellas y Cuerpo)
 - **Migración SQL 005** (`sql/005_agua.sql`) y su prueba de seguridad `sql/006_test_rls_agua.sql` (16 comprobaciones). Dos tablas nuevas con RLS: `water_containers` (botellas con su volumen en ml; se archivan, no se borran) y `water_intakes` (una fila por toma; guarda una foto del nombre de la botella). Se suman a la exportación. **Orden obligatorio:** exportar respaldo → ejecutar 005 → ejecutar 006 (con tu User UID) → recién ahí subir los archivos de la app.
 - Pestaña **Agua**: botones rápidos (+250 ml, +500 ml, +1 L), un botón por cada botella tuya (un toque suma su volumen) y «otra cantidad» en **ml o L** (0,5 L = 500 ml). Total del día contra la meta, cuánto falta y la lista de tomas, con «Deshacer / borrar» en la última. Se puede cargar cualquier fecha.

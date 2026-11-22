@@ -4,9 +4,28 @@ import { h } from '../../core/dom.js';
 import { hoy, lunesDe, sumarDias, rango, etiquetaLarga, formatoFechaHora } from '../../core/fechas.js';
 import { agruparPorSerie } from '../../core/estados.js';
 import { calcularSemana, armarInformes, prioridadesAl, ESPECIALISTAS, MAX_LINEAS_GENERAL } from '../../core/informes.js';
+import { calcularAreas } from '../../core/areas.js';
 import * as D from './datos.js';
+import * as GD from '../gym/datos.js';
+import * as ND from '../nutri/datos.js';
+import { medidasDesde } from '../compartido/medidas.js';
 
 const ddmm = (f) => { const [, m, d] = f.split('-'); return `${Number(d)}/${Number(m)}`; };
+
+// Datos reales de Gym y Nutri para los informes. Cada parte es OPCIONAL: si una no se puede leer queda en null y el informe
+// lo dice («no se pudieron leer»), sin bloquear los hábitos ni mostrar un 0 inventado. Nunca lanza error.
+async function cargarExtras(lunes, desde, hasta) {
+  const val = (r) => (r.status === 'fulfilled' ? r.value : null);
+  const [rSes, rEj, rCom, rTom, rMed] = await Promise.allSettled([
+    GD.listarSesiones(sumarDias(lunes, -56)), GD.listarEjercicios(), ND.comidasEntre(desde, hasta), ND.tomasEntre(desde, hasta), medidasDesde(sumarDias(lunes, -70))
+  ]);
+  let sesiones = val(rSes), sets = null;
+  if (sesiones) {
+    sesiones = sesiones.filter((x) => x.performed_on <= hasta);
+    try { sets = await GD.setsDe(sesiones.map((x) => x.id)); } catch { sesiones = null; }
+  }
+  return { sesiones, sets, ejercicios: val(rEj), comidas: val(rCom), tomas: val(rTom), medidas: val(rMed) };
+}
 
 const NOMBRE_TIPO = {
   general: 'Informe general', diario: 'Registro diario', semanal: 'Resumen semanal',
@@ -90,12 +109,14 @@ export function renderInformes(cont, ctx) {
     const desde = sumarDias(lunes, -7);
     const hasta = sumarDias(lunes, 6);
     try {
+      const extrasP = cargarExtras(lunes, desde, hasta);                       // en paralelo; nunca falla
       const [defs, logs, entradas, prioridades, revision] = await Promise.all([
         D.listarHabitos(), D.logsEntre(desde, hasta), D.entradasEntre(desde, hasta),
         D.listarPrioridades(), D.leerRevision(lunes)
       ]);
+      const datosAreas = await extrasP;
       if (mio !== token) return;
-      pintar({ series: agruparPorSerie(defs), logs, entradas, prioridades, revision });
+      pintar({ series: agruparPorSerie(defs), logs, entradas, prioridades, revision, datosAreas });
     } catch (e) {
       if (mio !== token) return;
       mostrarError(new Error('No se pudieron cargar los datos: ' + (e?.message ?? e)));
@@ -103,13 +124,14 @@ export function renderInformes(cont, ctx) {
     }
   }
 
-  function pintar({ series, logs, entradas, prioridades, revision }) {
+  function pintar({ series, logs, entradas, prioridades, revision, datosAreas }) {
     const sem = calcularSemana({ series, logs, entradas, lunes, hoy: hoy() });
     const p = sem.periodo;
+    const areas = calcularAreas({ series, logs, datos: datosAreas, periodo: sem.periodo, anterior: sem.periodoAnterior });
     const dias = rango(p.desde, p.hasta);
     if (!fecha || !dias.includes(fecha)) fecha = dias[dias.length - 1];
     const titulos = prioridadesAl(prioridades, p.hasta).map((x) => x.title);
-    const textos = () => armarInformes({ sem, series, logs, entradas, fecha, especialista: espId, prioridades: titulos, revision });
+    const textos = () => armarInformes({ sem, series, logs, entradas, fecha, especialista: espId, prioridades: titulos, revision, areas, datosAreas });
 
     const guardarComo = (tipo, inicio, fin) => async (contenido) => {
       await D.guardarInforme({ report_type: tipo, period_start: inicio, period_end: fin, content: contenido });
@@ -139,7 +161,7 @@ export function renderInformes(cont, ctx) {
 
     const semanal = panelTexto({ getTexto: () => textos().semanal, onGuardar: guardarComo('semanal', p.desde, p.hasta) });
     const comparacion = panelTexto({ getTexto: () => textos().comparacion, onGuardar: guardarComo('comparacion', p.desde, p.hasta) });
-    const areas = panelTexto({ getTexto: () => textos().areas, onGuardar: guardarComo('areas', p.desde, p.hasta) });
+    const areasP = panelTexto({ getTexto: () => textos().areas, onGuardar: guardarComo('areas', p.desde, p.hasta) });
 
     const nota = panelTexto({ getTexto: () => textos().especialista,
       onGuardar: (c) => guardarComo('nota_' + espId, p.desde, p.hasta)(c) });
@@ -150,11 +172,12 @@ export function renderInformes(cont, ctx) {
     raiz.replaceChildren(
       nav,
       h('p', { class: 'nota' }, 'Cada informe está en Markdown: copialo y pegalo en el chat del especialista. Un dato sin registrar figura como tal, nunca como incumplimiento.'),
-      tarjeta('INFORME GENERAL', 'Para el chat Central. Resumen corto de la semana.', general, null, true),
-      tarjeta('Registro diario consolidado', 'Lo registrado en un día, con ánimo, energía y notas.', diario, selDia),
+      ...(areas.faltantes.length ? [h('p', { class: 'error' }, `No se pudieron leer: ${areas.faltantes.join(', ')}. Esos datos figuran como «no se pudieron leer» en los informes. Probá de nuevo más tarde.`)] : []),
+      tarjeta('INFORME GENERAL', 'Para el chat Central. Resumen corto de la semana, con datos reales de Gym y Nutri.', general, null, true),
+      tarjeta('Registro diario consolidado', 'Lo registrado en un día, con Gym, Nutri, ánimo, energía y notas.', diario, selDia),
       tarjeta('Resumen semanal', 'Totales de la semana, tu revisión y tus prioridades.', semanal),
-      tarjeta('Comparación con la semana anterior', 'Cambios frente a la semana previa (en curso: mismos días).', comparacion),
-      tarjeta('Indicadores por área', 'Cumplimiento de cada módulo y detalle por hábito.', areas),
+      tarjeta('Comparación con la semana anterior', 'Cambios frente a la semana previa (en curso: mismos días), incluidos entrenos, pasos, proteína, agua y peso.', comparacion),
+      tarjeta('Indicadores por área', 'Cumplimiento de cada módulo, detalle por hábito y datos reales de Gym y Nutri.', areasP),
       tarjeta('Nota para un especialista', 'Elegí el chat al que se lo vas a pegar.', nota, selEsp)
     );
   }

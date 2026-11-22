@@ -54,3 +54,8 @@
 - `js/modules/nutri/`: `agua.js` (tomas), `botellas.js` (recipientes), `historial.js` (proteína + agua), `datos.js` (tablas `water_containers` y `water_intakes`). La pestaña Cuerpo reutiliza `js/modules/gym/cuerpo.js`.
 - El total de agua del día es la suma de `water_intakes`; la meta es un hábito de cantidad (Nutri, nombre con «Agua»). `habit_logs.note`: `auto-agua` = cumplido automático (recalculable); `cierre-dia` = cierre manual (no se toca). Cada hábito reconoce solo su propia marca automática: el cumplido de proteína no se confunde con el de agua.
 - Las pantallas de Agua ignoran toques repetidos mientras una operación está en curso (evita tomas duplicadas).
+
+## Informes con datos de Gym y Nutri (hito 3-5a)
+- `js/core/areas.js` (lógica pura): calcula los datos reales de la semana (sesiones, series, volumen, progresión por ejercicio, pasos, peso y cintura, proteína y agua) y arma los fragmentos de texto. `informes.js` los recibe como `areas` / `datosAreas` opcionales; sin ellos los textos son idénticos a los de antes. Los estados de los hábitos siguen decidiéndose en `estados.js`.
+- La pantalla `central/informes.js` carga los datos extra EN PARALELO y de forma opcional (`Promise.allSettled`): si una parte no se puede leer queda en null, el informe lo dice y el resto sigue. Lee desde `modules/gym/datos.js`, `modules/nutri/datos.js` y `modules/compartido/medidas.js` (Central depende de esos módulos solo para lectura).
+- El INFORME GENERAL sigue limitado a 15 líneas por `limitarLineas`, pero además los datos nuevos van dentro de las líneas existentes, así que el límite no recorta contenido.
