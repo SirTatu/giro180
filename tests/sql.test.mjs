@@ -98,13 +98,26 @@ test('los scripts de prueba mantienen el marcador del UID y cubren cada tabla nu
   assert.deepEqual(nums, Array.from({ length: nums.length }, (_, i) => i + 1), 'los números de FALLO deben ser 1..N sin repetir');
 });
 
-test('005 (agua): su script de prueba 006 cubre cada tabla, tiene el marcador del UID y FALLO 1..N', () => {
-  const nueva = crudo['005_agua.sql'];
-  const prueba = crudo['006_test_rls_agua.sql'];
-  assert.match(prueba, /PEGAR-AQUI-TU-USER-UID/);
-  for (const m of nueva.matchAll(/create table(?: if not exists)? public\.(\w+)/gi)) {
-    assert.match(prueba, new RegExp(`public\\.${m[1]}\\b`), `006 no prueba la tabla ${m[1]}`);
+// Cada migración nueva (005 en adelante) debe traer su script de prueba de seguridad (006, 008, ...): cubre cada tabla
+// creada, tiene el marcador del UID (nunca el UID real) y sus mensajes FALLO van de 1 a N sin saltos ni repetidos.
+for (const [nueva, prueba] of [['005_agua.sql', '006_test_rls_agua.sql'], ['007_alimentos.sql', '008_test_rls_alimentos.sql']]) {
+  test(`${nueva}: su prueba ${prueba} cubre cada tabla, usa el marcador del UID y FALLO 1..N`, () => {
+    assert.ok(crudo[nueva] && crudo[prueba], 'faltan archivos');
+    assert.match(crudo[prueba], /yo uuid := 'PEGAR-AQUI-TU-USER-UID'::uuid;/);
+    assert.ok(!/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'::uuid/.test(crudo[prueba]), 'no debe haber un UID real');
+    const tablas = [...crudo[nueva].matchAll(/create table(?: if not exists)? public\.(\w+)/gi)].map((m) => m[1]);
+    assert.ok(tablas.length > 0);
+    for (const t of tablas) assert.match(crudo[prueba], new RegExp(`public\\.${t}\\b`), `${prueba} no prueba la tabla ${t}`);
+    const nums = [...crudo[prueba].matchAll(/'FALLO (\d+):/g)].map((m) => Number(m[1]));
+    assert.deepEqual(nums, Array.from({ length: nums.length }, (_, k) => k + 1), 'los números de FALLO deben ser 1..N sin repetir');
+  });
+}
+
+test('007: no borra ni altera datos existentes (solo crea tablas y agrega columnas opcionales)', () => {
+  const sql = crudo['007_alimentos.sql'].replace(/--.*$/gm, '');
+  assert.ok(!/\bdrop\s+(table|column)\b/i.test(sql), 'no debe borrar tablas ni columnas');
+  assert.ok(!/\b(delete\s+from|truncate|update\s+public)\b/i.test(sql), 'no debe borrar ni modificar filas');
+  for (const m of sql.matchAll(/alter table public\.meals add column (?:if not exists )?(\w+)([^;]*);/gi)) {
+    assert.ok(!/not null/i.test(m[2]), `la columna ${m[1]} no debe ser NOT NULL: las comidas viejas quedarían inválidas`);
   }
-  const nums = [...prueba.matchAll(/'FALLO (\d+):/g)].map((m) => Number(m[1]));
-  assert.deepEqual(nums, Array.from({ length: nums.length }, (_, i) => i + 1), 'los números de FALLO deben ser 1..N sin repetir');
 });

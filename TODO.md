@@ -15,7 +15,7 @@
 - [x] 2C-2 Pestaña «Informes»: seis informes en Markdown, botón copiar, guardar en saved_reports (probada y confirmada por el usuario)
 - [x] 2C-3 Exportación JSON/CSV de todos los datos (confirmada por el usuario)
 
-## Etapa 3 — Gym y Nutri — cerrada
+## Etapa 3 — Gym y Nutri (hitos 3-0 a 3-5 cerrados; ampliación 3-6 en curso)
 - [x] 3-0 Migración SQL 003 (tablas) + prueba de seguridad 004 (ejecutadas y confirmadas por el usuario)
 - [x] 3-1 Gym: ejercicios y rutinas + importador (v0.9.0; el usuario continuó al 3-2)
 - [x] 3-2 Gym: registrar entrenamiento, historial y progresión (v0.10.0; confirmado por el usuario)
@@ -26,13 +26,19 @@
 - [x] 3-5 Informes: sumar Gym y Nutri al INFORME GENERAL, indicadores, notas de especialistas y Panel
   - [x] 3-5a Informes con datos reales de Gym y Nutri (v0.14.0; confirmado por el usuario)
   - [x] 3-5b Panel con entrenos de la semana, proteína y agua de hoy (v0.15.0; confirmado por el usuario)
+- [ ] 3-6 Ampliación de Nutri: base de alimentos y las 4 macros
+  - [ ] 3-6a Migración 007 + pestaña Alimentos con porciones (v0.16.0, entregado; falta que el usuario lo pruebe)
+  - [ ] 3-6b Registrar comidas eligiendo un alimento y gramos o porciones; ver calorías, carbos, proteínas y grasas del día
+  - [ ] 3-6c Pestaña Objetivos: objetivo por macro como «al menos», «como máximo» o «entre X e Y»; estado «excedido»; cierre del día; Historial, Informes y Panel con las 4 macros
 - Decisiones tomadas / abiertas de la etapa:
+  - 3-6: decidido por el usuario: alimentos por 100 g (o 100 ml) + porciones opcionales; los objetivos se configuran en Nutri → Objetivos (los hábitos quedan por debajo, versionados); un día «excedido» NO cuenta como no cumplido en los porcentajes, solo se marca. Pendiente de resolver en 3-6c: eso exige un estado nuevo («excedido») en `habit_logs` y en `estados.js`, con su migración; hay que confirmar con el usuario el detalle antes de tocar nada.
   - 3-1: las rutinas NO van escritas en el código (el repo es público); se cargan pegando el texto en la app. Los ejercicios de nombre parecido los decide el usuario en la vista previa.
   - Ejercicio salteado: hoy no deja rastro (no hay filas). Si más adelante se quiere distinguir «salteado» de «no cargado», requiere una migración.
   - 3-4: decidido: la proteína del día se suma de las comidas; sin cierre explícito, por debajo de la meta es «sin completar»; «Cerrar el día» es manual; el agua sigue la misma regla (3-4b).
   - Borrar un entrenamiento NO desmarca el hábito «Entrenar» de ese día (se corrige en Hoy). Evaluar si conviene automatizarlo.
 
 ## Ideas / pendientes
+- Alimentos: importar una lista pegando texto (como el importador de rutinas); no precargar nada en el código (el repo es público)
 - Panel: sumar los pasos de hoy a la tarjeta Gym y Nutri (si se quiere)
 - Repo: limpiar las copias viejas dentro de `js/core/` (README, ARCHITECTURE, CHANGELOG, DATABASE, TODO, sw.js, tests/ y js/ anidados) — no las usa la app
 - Agua: no hay orden manual de botellas (van por nombre); no se guarda la hora de cada toma más allá de su fecha de creación

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.16.0 — Etapa 3, ampliación 3-6a (base de alimentos)
+- **Migración SQL 007** (`sql/007_alimentos.sql`) y su prueba de seguridad `sql/008_test_rls_alimentos.sql` (26 comprobaciones). Crea `foods` (alimentos con calorías, carbohidratos, proteínas y grasas **por 100 g o por 100 ml**) y `food_portions` (porciones con nombre, por ejemplo «1 huevo» = 50 g), ambas con RLS y exportables. Agrega a `meals` columnas OPCIONALES para las otras macros y la foto del alimento (`calories_kcal`, `carbs_g`, `fat_g`, `food_id`, `food_name`, `amount`). No borra ni cambia ningún dato: las comidas anteriores quedan igual y lo que no se cargó es NULL («sin dato»), nunca 0. **Orden obligatorio:** exportar respaldo → ejecutar 007 → ejecutar 008 (con tu User UID) → recién ahí subir los archivos de la app.
+- Pestaña **Alimentos** en Nutri: alta, edición y archivo de alimentos; porciones con nombre por alimento (alta y borrado); búsqueda sin distinguir mayúsculas ni tildes. Las 4 macros son obligatorias en un alimento (si es cero se escribe 0). Rechaza valores negativos, calorías de más de 1000 por 100 g y macros que suman más de 100 g por cada 100 g. Si las calorías no coinciden con las macros (4·C + 4·P + 9·G) avisa, pero deja guardar. Los nombres repetidos se rechazan con mensaje claro.
+- Nuevo `js/core/alimentos.js` (validación, cálculo de macros por cantidad o porción, búsqueda) y `tests/alimentos.test.mjs` (10 pruebas). `tests/sql.test.mjs` ahora exige que cada migración nueva traiga su script de prueba (cubre cada tabla, usa el marcador de UID y numera FALLO 1..N) y que 007 no borre ni modifique datos. Total: 133 pruebas.
+- Todavía NO se usan los alimentos al registrar comidas (3-6b) ni hay objetivos por macro (3-6c): esta versión solo arma la base.
+- Service Worker v0.16.0.
+
 ## 0.15.1 — Cierre de la Etapa 3 (sin cambios funcionales)
 - La app no cambia: mismo código que la 0.15.0. Se sube la versión solo para que el Service Worker refresque su caché junto con el cierre.
 - `sql/004_test_rls_gym_nutri.sql` ya no trae tu User UID real escrito: usa el marcador `PEGAR-AQUI-TU-USER-UID` (como 002 y 006). Si volvés a ejecutarla, pegá tu UID en la línea `yo uuid := ...`. El UID viejo sigue visible en el historial de commits de GitHub; no es una clave y RLS lo protege, pero no es dato para un repo público.

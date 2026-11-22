@@ -25,7 +25,10 @@ export const TABLAS_EXPORT = [
   { tabla: 'meals', orden: 'id', etiqueta: 'Nutri: comidas' },
   // Hito 3-4b (migración 005)
   { tabla: 'water_containers', orden: 'id', etiqueta: 'Nutri: botellas' },
-  { tabla: 'water_intakes', orden: 'id', etiqueta: 'Nutri: tomas de agua' }
+  { tabla: 'water_intakes', orden: 'id', etiqueta: 'Nutri: tomas de agua' },
+  // Ampliación 3-6a (migración 007)
+  { tabla: 'foods', orden: 'id', etiqueta: 'Nutri: alimentos' },
+  { tabla: 'food_portions', orden: 'id', etiqueta: 'Nutri: porciones de alimentos' }
 ];
 
 // Formato del CSV pensado para Excel en español de Argentina (separador de listas «;» y coma decimal).

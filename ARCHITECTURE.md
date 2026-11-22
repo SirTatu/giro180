@@ -63,3 +63,8 @@
 ## Panel con Gym y Nutri (hito 3-5b)
 - `indicadoresPanel` y `textoPanel` (en `js/core/areas.js`, lógica pura) calculan y redactan la tarjeta «Gym y Nutri» del Panel. `central/panel.js` lee entrenamientos de la semana, comidas de hoy y tomas de hoy de forma OPCIONAL (`Promise.allSettled`): una lectura que falla deja esa métrica en «—» y no bloquea el panel.
 - Entrenos = cantidad de entrenamientos registrados de lunes a hoy; el hábito Entrenar solo aporta la nota «X de Y días programados cumplidos».
+
+## Base de alimentos (ampliación 3-6a)
+- `js/core/alimentos.js` (lógica pura): `MACROS` (calorías, carbohidratos, proteínas, grasas y su columna en alimentos y en comidas), validación de alimentos y porciones, `macrosDeCantidad` (valor por 100 × cantidad / 100), búsqueda sin tildes. `tests/alimentos.test.mjs`.
+- `js/modules/nutri/alimentos.js` (pestaña) y funciones nuevas en `nutri/datos.js` (tablas `foods` y `food_portions`; fallan si una consulta llega a 1000 filas).
+- Las comidas (`meals`) guardan una FOTO de lo que se comió (`food_name`, `amount` y las macros calculadas): cambiar o borrar un alimento no altera el historial. NULL = sin dato, nunca 0.

@@ -34,3 +34,16 @@ export async function tomasEntre(desde, hasta) {
 }
 export const crearToma = (campos) => supabase.from('water_intakes').insert(campos).select().single().then(ok);
 export const borrarToma = (id) => supabase.from('water_intakes').delete().eq('id', id).then(ok);
+
+// ---------- alimentos y porciones (migración 007) ----------
+async function leerTodo(consulta, que) {
+  const filas = await consulta.limit(LIMITE).then(ok);
+  if (filas.length >= LIMITE) throw new Error(`Hay demasiados ${que} para leerlos de una vez.`);
+  return filas;
+}
+export const listarAlimentos = () => leerTodo(supabase.from('foods').select('*').order('name', { ascending: true }), 'alimentos');
+export const crearAlimento = (campos) => supabase.from('foods').insert(campos).select().single().then(ok);
+export const actualizarAlimento = (id, campos) => supabase.from('foods').update(campos).eq('id', id).select().single().then(ok);
+export const listarPorciones = () => leerTodo(supabase.from('food_portions').select('*').order('name', { ascending: true }), 'porciones');
+export const crearPorcion = (campos) => supabase.from('food_portions').insert(campos).select().single().then(ok);
+export const borrarPorcion = (id) => supabase.from('food_portions').delete().eq('id', id).then(ok);

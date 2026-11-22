@@ -1,14 +1,16 @@
-// Módulo Nutri: pestañas Hoy (comidas y proteína), Agua, Botellas, Historial y Cuerpo.
+// Módulo Nutri: pestañas Hoy (comidas y proteína), Alimentos, Agua, Botellas, Historial y Cuerpo.
 // Cuerpo reutiliza tal cual la pantalla de Gym: peso y cintura viven en una sola tabla (body_measurements).
 import { h } from '../../core/dom.js';
 import { renderHoy } from './hoy.js';
 import { renderAgua } from './agua.js';
+import { renderAlimentos } from './alimentos.js';
 import { renderBotellas } from './botellas.js';
 import { renderHistorial } from './historial.js';
 import { renderCuerpo } from '../gym/cuerpo.js';
 
 const TABS = [
   { id: 'hoy', nombre: 'Hoy', render: renderHoy },
+  { id: 'alimentos', nombre: 'Alimentos', render: renderAlimentos },
   { id: 'agua', nombre: 'Agua', render: renderAgua },
   { id: 'botellas', nombre: 'Botellas', render: renderBotellas },
   { id: 'historial', nombre: 'Historial', render: renderHistorial },

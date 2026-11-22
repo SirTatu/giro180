@@ -66,3 +66,8 @@ El registro del día en `habit_logs` guarda en `value` el total de proteína y e
 `water_containers`: botellas (`name` único sin distinguir mayúsculas, `volume_ml` 1 a 20000, `archived`). `water_intakes`: una fila por toma (`drunk_on`, `ml` 1 a 10000, `container_id` que pasa a null si se borra la botella y `container_name` como foto). El total del día es la suma; sin tomas = no registrado, nunca 0.
 La meta es un hábito de cantidad (Nutri, «Agua», unidad L o ml). Su registro en `habit_logs.value` va en la unidad del hábito; `note` = `auto-agua` o `cierre-dia`.
 Cómo aplicarla: exportar respaldo → ejecutar `005_agua.sql` → ejecutar `006_test_rls_agua.sql` (con tu User UID) → subir la app.
+
+## Alimentos y macros (migración 007, v0.16.0)
+`foods`: alimentos con `kcal_100`, `carbs_100`, `protein_100`, `fat_100` (las 4 obligatorias, por 100 g o 100 ml según `base_unit`); la suma de carbos + proteínas + grasas no puede pasar de 100,5; nombre único sin distinguir mayúsculas; se archivan. `food_portions`: porciones con nombre (`amount` en g o ml), únicas por alimento; se borran con el alimento.
+`meals` suma columnas OPCIONALES (NULL = sin dato): `calories_kcal`, `carbs_g`, `fat_g`, `food_id` (pasa a NULL si se borra el alimento), `food_name` y `amount` (fotos de lo comido). Las comidas anteriores quedan como estaban.
+Cómo aplicarla: exportar respaldo → ejecutar `007_alimentos.sql` → ejecutar `008_test_rls_alimentos.sql` (con tu User UID) → subir la app.
