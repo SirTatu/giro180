@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.15.0 — Etapa 3, hito 3-5b (Panel con Gym y Nutri)
+- El **Panel** de Central suma la tarjeta **Gym y Nutri** con tres números de un vistazo: entrenos registrados esta semana (lunes a hoy), proteína de hoy contra su meta y agua de hoy contra su meta. Debajo, notas cortas: faltan X g o X L, meta cumplida, día cerrado, comidas sin proteína cargada y, si existe el hábito Entrenar, cuántos días programados se cumplieron. Sin migración SQL.
+- Mismas reglas que en Nutri: por debajo de la meta es «sin completar» (nunca incumplido); sin comidas o sin tomas hoy se muestra «—», no 0 g ni 0 ml; «0 entrenos registrados» es un conteo de registros, no un incumplimiento.
+- Lectura opcional: si no se pueden leer los entrenamientos, las comidas o el agua, ese número queda en «—», el panel lo avisa («No se pudo leer: …») y todo lo demás sigue funcionando. Si fallan los hábitos (lo esencial) se muestra el error de siempre.
+- Nuevas funciones `indicadoresPanel` y `textoPanel` en `js/core/areas.js` (6 pruebas nuevas en `tests/areas.test.mjs`). Total: 121 pruebas.
+- Service Worker v0.15.0.
+
 ## 0.14.0 — Etapa 3, hito 3-5a (Informes con datos reales de Gym y Nutri)
 - Los informes ya no usan solo hábitos: leen entrenamientos, pasos, peso y cintura, comidas y agua. Sin migración SQL.
 - **INFORME GENERAL** (siempre 15 líneas o menos): la línea de Gym suma entrenos (con el período anterior), pasos por día y peso; la de Nutri suma proteína y agua por día. No agrega líneas: va en la misma línea del área. Un área con datos reales aparece aunque no tenga hábitos programados.

@@ -24,8 +24,8 @@
   - [x] 3-4a Comidas y proteína por comida + cierre del día (v0.12.0; confirmado por el usuario)
   - [x] 3-4b Agua, botellas y Cuerpo en Nutri (v0.13.0; confirmado por el usuario)
 - [ ] 3-5 Informes: sumar Gym y Nutri al INFORME GENERAL, indicadores, notas de especialistas y Panel
-  - [ ] 3-5a Informes con datos reales de Gym y Nutri (v0.14.0, entregado; falta que el usuario lo pruebe)
-  - [ ] 3-5b Panel con indicadores de Gym y Nutri
+  - [x] 3-5a Informes con datos reales de Gym y Nutri (v0.14.0; confirmado por el usuario)
+  - [ ] 3-5b Panel con entrenos de la semana, proteína y agua de hoy (v0.15.0, entregado; falta que el usuario lo pruebe)
 - Decisiones abiertas para el hito indicado:
   - 3-1: las rutinas NO van escritas en el código (el repo es público); se cargan pegando el texto en la app. Los ejercicios de nombre parecido los decide el usuario en la vista previa.
   - Ejercicio salteado: hoy no deja rastro (no hay filas). Si más adelante se quiere distinguir «salteado» de «no cargado», requiere una migración.

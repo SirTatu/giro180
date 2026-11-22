@@ -194,3 +194,73 @@ test('Los 6 especialistas siguen armándose con y sin datos reales', () => {
     }
   }
 });
+
+// ---------- Panel (hito 3-5b) ----------
+import { indicadoresPanel, textoPanel } from '../js/core/areas.js';
+
+const hoyP = '2026-11-12';
+const panel = (extra = {}) => indicadoresPanel({ defs: defs, logs, fecha: hoyP, lunes: LUN, sesiones, comidas: comidas.concat([comida(hoyP, 70)]), tomas: tomas.concat([toma(hoyP, 1200)]), ...extra });
+
+test('Panel: entrenos de la semana en curso (no los de semanas anteriores) y hábito aparte', () => {
+  const p = panel();
+  assert.equal(p.entrenos.n, 2);                                   // 10 y 11 de noviembre; los de la semana anterior no cuentan
+  assert.deepEqual(p.entrenos.habito, { programados: 4, cumplidos: 2 });
+  const t = textoPanel(p);
+  assert.deepEqual(t.metricas[0], { valor: '2', etiqueta: 'Entrenos registrados esta semana', clase: 'ok' });
+  assert.ok(t.notas.includes('Hábito Entrenar: 2 de 4 días programados cumplidos.'));
+});
+
+test('Panel: proteína y agua de HOY contra la meta; sin completar no es incumplido', () => {
+  const p = panel();
+  assert.equal(p.proteina.total, 70);                              // solo la comida de hoy
+  assert.equal(p.proteina.falta, 50);
+  assert.equal(p.proteina.estado, 'sin_completar');
+  assert.equal(p.agua.ml, 1200);
+  assert.equal(p.agua.falta, 1800);
+  assert.equal(p.agua.estado, 'sin_completar');
+  const t = textoPanel(p);
+  assert.deepEqual(t.metricas[1], { valor: '70 g', etiqueta: 'Proteína de hoy · meta 120 g', clase: '' });
+  assert.deepEqual(t.metricas[2], { valor: '1,2 L', etiqueta: 'Agua de hoy · meta 3 L', clase: '' });
+  assert.ok(t.notas.includes('Proteína: sin completar · faltan 50 g.'));
+  assert.ok(t.notas.includes('Agua: sin completar · faltan 1,8 L.'));
+});
+
+test('Panel: cumplido (automático) e incumplido (cierre manual) se muestran según el registro', () => {
+  const lg = [...logs, log('pr', hoyP, 'done', 130), log('ag', hoyP, 'missed', 2.5)];
+  lg.find((l) => l.habit_id === 'pr' && l.log_date === hoyP).note = 'auto-proteina';
+  lg.find((l) => l.habit_id === 'ag' && l.log_date === hoyP).note = 'cierre-dia';
+  const t = textoPanel(panel({ logs: lg }));
+  assert.ok(t.notas.includes('Proteína: meta cumplida.'));
+  assert.ok(t.notas.includes('Agua: día cerrado como incumplido.'));
+  assert.equal(t.metricas[1].clase, 'ok');
+});
+
+test('Panel: hoy sin nada cargado dice «—», no 0; avisa comidas sin proteína', () => {
+  const t = textoPanel(panel({ comidas: [], tomas: [] }));
+  assert.equal(t.metricas[1].valor, '—');
+  assert.equal(t.metricas[2].valor, '—');
+  assert.ok(t.notas.includes('Proteína: todavía no cargaste comidas hoy.'));
+  assert.ok(t.notas.includes('Agua: todavía no cargaste tomas hoy.'));
+  const t2 = textoPanel(panel({ comidas: [comida(hoyP, 40), comida(hoyP, null)] }));
+  assert.equal(t2.metricas[1].valor, '40 g');
+  assert.ok(t2.notas.some((n) => /1 comida quedó sin proteína cargada \(el total solo suma lo cargado\)\./.test(n)));
+});
+
+test('Panel: lo que no se pudo leer se avisa y no se inventa; el resto sigue', () => {
+  const t = textoPanel(panel({ sesiones: null, tomas: null }));
+  assert.equal(t.metricas[0].valor, '—');
+  assert.equal(t.metricas[2].valor, '—');
+  assert.equal(t.metricas[1].valor, '70 g');
+  assert.ok(t.notas.includes('No se pudo leer: entrenamientos, agua. Probá recargar.'));
+});
+
+test('Panel: sin hábitos de meta muestra el total igual; sin sesiones registra 0 entrenos', () => {
+  const p = indicadoresPanel({ defs: [], logs: [], fecha: hoyP, lunes: LUN, sesiones: [], comidas: [comida(hoyP, 55)], tomas: [toma(hoyP, 500)] });
+  const t = textoPanel(p);
+  assert.equal(t.metricas[0].valor, '0');
+  assert.equal(t.metricas[1].etiqueta, 'Proteína de hoy');
+  assert.equal(t.metricas[1].valor, '55 g');
+  assert.equal(t.metricas[2].valor, '500 ml');
+  assert.equal(p.proteina.estado, null);
+  assert.equal(p.proteina.falta, null);
+});

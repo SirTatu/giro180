@@ -1,10 +1,11 @@
 // Datos REALES de Gym y Nutri para los informes (hito 3-5a). Lógica pura: sin pantalla ni base de datos.
 // Pruebas en tests/areas.test.mjs. Reglas: un dato que no se cargó o no se pudo leer NUNCA se muestra como 0 ni como
 // incumplimiento; promedios solo sobre días con dato; todo lo que no se puede calcular es null y el texto lo dice.
-import { totales, progresionEjercicio, formatoNumero } from './entrenos.js';
+import { totales, progresionEjercicio, formatoNumero, buscarHabitoEntrenar } from './entrenos.js';
+import { resumenSerie } from './estados.js';
 import { buscarHabitoPasos, resumenPasos, tendenciaMedidas, formatoDelta } from './cuerpo.js';
-import { buscarHabitoProteina, totalesPorDia as comidasPorDia, aviso } from './nutri.js';
-import { buscarHabitoAgua, totalesPorDia as tomasPorDia, metaEnMl, formatoMl } from './agua.js';
+import { buscarHabitoProteina, totalesPorDia as comidasPorDia, aviso, totalDia, estadoProteina } from './nutri.js';
+import { buscarHabitoAgua, totalesPorDia as tomasPorDia, metaEnMl, formatoMl, totalAgua, estadoAgua } from './agua.js';
 
 const pl = (n, s, p) => `${n} ${n === 1 ? s : p}`;
 const miles = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -268,4 +269,67 @@ export function lineasDia({ fecha, datos = {} }) {
     L.push(`- Cuerpo: ${[m.weight_kg != null ? `peso ${formatoNumero(m.weight_kg)} kg` : null, m.waist_cm != null ? `cintura ${formatoNumero(m.waist_cm)} cm` : null].filter(Boolean).join(' · ')}`);
   }
   return L;
+}
+
+// ---------- Panel de Central (hito 3-5b) ----------
+// Lo de hoy y de la semana en curso, de un vistazo. Cada parte es null si no se pudo leer (nunca un 0 inventado).
+// «Entrenos» es la cantidad de entrenamientos REGISTRADOS esta semana; el hábito Entrenar (si existe) se muestra aparte.
+export function indicadoresPanel({ defs, logs, fecha, lunes, sesiones = null, comidas = null, tomas = null }) {
+  const out = { entrenos: null, proteina: null, agua: null };
+  const logDe = (hab) => (hab.versiones.length ? logs.find((l) => l.log_date === fecha && hab.versiones.some((v) => v.id === l.habit_id)) ?? null : null);
+  if (sesiones) {
+    const ses = sesiones.filter((x) => x.performed_on >= lunes && x.performed_on <= fecha);
+    const hab = buscarHabitoEntrenar(defs, fecha);
+    const r = hab.versiones.length ? resumenSerie(hab.versiones, logs, lunes, fecha) : null;
+    out.entrenos = { n: ses.length, habito: r && r.programados > 0 ? { programados: r.programados, cumplidos: r.cumplidos } : null };
+  }
+  if (comidas) {
+    const t = totalDia(comidas.filter((c) => c.eaten_on === fecha));
+    const hab = buscarHabitoProteina(defs, fecha);
+    const meta = hab.version ? Number(hab.version.target_value) : null;
+    const e = meta != null ? estadoProteina(logDe(hab), t) : { estado: null, cerrado: false };
+    out.proteina = { total: t.total, cantidad: t.cantidad, sinProteina: t.sinProteina, meta, falta: meta != null && t.total != null && t.total < meta ? r1(meta - t.total) : null, ...e };
+  }
+  if (tomas) {
+    const t = totalAgua(tomas.filter((x) => x.drunk_on === fecha));
+    const hab = buscarHabitoAgua(defs, fecha);
+    const metaMl = hab.version ? metaEnMl(hab.version) : null;
+    const e = metaMl != null ? estadoAgua(logDe(hab), t) : { estado: null, cerrado: false };
+    out.agua = { ml: t.ml, cantidad: t.cantidad, metaMl, falta: metaMl != null && t.cantidad && t.ml < metaMl ? metaMl - t.ml : null, ...e };
+  }
+  return out;
+}
+
+// Texto del Panel: tres métricas y algunas notas cortas.
+export function textoPanel(ind) {
+  const metricas = [], notas = [], faltan = [];
+  const e = ind.entrenos;
+  if (!e) { metricas.push({ valor: '—', etiqueta: 'Entrenos de la semana', clase: 'warn' }); faltan.push('entrenamientos'); }
+  else {
+    metricas.push({ valor: String(e.n), etiqueta: 'Entrenos registrados esta semana', clase: e.n ? 'ok' : '' });
+    if (e.habito) notas.push(`Hábito Entrenar: ${e.habito.cumplidos} de ${e.habito.programados} días programados cumplidos.`);
+  }
+  const p = ind.proteina;
+  if (!p) { metricas.push({ valor: '—', etiqueta: 'Proteína de hoy', clase: 'warn' }); faltan.push('comidas'); }
+  else {
+    metricas.push({ valor: p.total == null ? '—' : `${formatoNumero(p.total)} g`, etiqueta: `Proteína de hoy${p.meta != null ? ` · meta ${formatoNumero(p.meta)} g` : ''}`, clase: p.estado === 'cumplido' ? 'ok' : '' });
+    if (p.estado === 'cumplido') notas.push('Proteína: meta cumplida.');
+    else if (p.estado === 'incumplido') notas.push('Proteína: día cerrado como incumplido.');
+    else if (p.estado === 'sin_completar') notas.push(`Proteína: sin completar${p.falta != null ? ` · faltan ${formatoNumero(p.falta)} g` : ''}.`);
+    else if (p.estado === 'no_registrado') notas.push('Proteína: todavía no cargaste comidas hoy.');
+    else if (p.cantidad === 0) notas.push('Proteína: todavía no cargaste comidas hoy.');
+    const av = aviso(p);
+    if (av) notas.push(`${av.replace(/\.$/, '')} (el total solo suma lo cargado).`);
+  }
+  const a = ind.agua;
+  if (!a) { metricas.push({ valor: '—', etiqueta: 'Agua de hoy', clase: 'warn' }); faltan.push('agua'); }
+  else {
+    metricas.push({ valor: a.cantidad ? formatoMl(a.ml) : '—', etiqueta: `Agua de hoy${a.metaMl != null ? ` · meta ${formatoMl(a.metaMl)}` : ''}`, clase: a.estado === 'cumplido' ? 'ok' : '' });
+    if (a.estado === 'cumplido') notas.push('Agua: meta cumplida.');
+    else if (a.estado === 'incumplido') notas.push('Agua: día cerrado como incumplido.');
+    else if (a.estado === 'sin_completar') notas.push(`Agua: sin completar${a.falta != null ? ` · faltan ${formatoMl(a.falta)}` : ''}.`);
+    else if (a.cantidad === 0) notas.push('Agua: todavía no cargaste tomas hoy.');
+  }
+  if (faltan.length) notas.push(`No se pudo leer: ${faltan.join(', ')}. Probá recargar.`);
+  return { metricas, notas };
 }

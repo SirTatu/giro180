@@ -59,3 +59,7 @@
 - `js/core/areas.js` (lógica pura): calcula los datos reales de la semana (sesiones, series, volumen, progresión por ejercicio, pasos, peso y cintura, proteína y agua) y arma los fragmentos de texto. `informes.js` los recibe como `areas` / `datosAreas` opcionales; sin ellos los textos son idénticos a los de antes. Los estados de los hábitos siguen decidiéndose en `estados.js`.
 - La pantalla `central/informes.js` carga los datos extra EN PARALELO y de forma opcional (`Promise.allSettled`): si una parte no se puede leer queda en null, el informe lo dice y el resto sigue. Lee desde `modules/gym/datos.js`, `modules/nutri/datos.js` y `modules/compartido/medidas.js` (Central depende de esos módulos solo para lectura).
 - El INFORME GENERAL sigue limitado a 15 líneas por `limitarLineas`, pero además los datos nuevos van dentro de las líneas existentes, así que el límite no recorta contenido.
+
+## Panel con Gym y Nutri (hito 3-5b)
+- `indicadoresPanel` y `textoPanel` (en `js/core/areas.js`, lógica pura) calculan y redactan la tarjeta «Gym y Nutri» del Panel. `central/panel.js` lee entrenamientos de la semana, comidas de hoy y tomas de hoy de forma OPCIONAL (`Promise.allSettled`): una lectura que falla deja esa métrica en «—» y no bloquea el panel.
+- Entrenos = cantidad de entrenamientos registrados de lunes a hoy; el hábito Entrenar solo aporta la nota «X de Y días programados cumplidos».
