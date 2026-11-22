@@ -33,16 +33,6 @@ export function validarProteina(texto) {
   return { valor: n, error: null };
 }
 
-export function validarComida({ tipo, descripcion, proteina }) {
-  if (!TIPOS_COMIDA.some((t) => t.id === tipo)) return { error: 'Elegí el tipo de comida.' };
-  const d = String(descripcion ?? '').trim();
-  if (!d) return { error: 'Escribí qué comiste.' };
-  if (d.length > 300) return { error: 'La descripción es demasiado larga (máximo 300 caracteres).' };
-  const p = validarProteina(proteina);
-  if (p.error) return { error: p.error };
-  return { error: null, datos: { meal_type: tipo, description: d, protein_g: p.valor } };
-}
-
 // ---------- totales ----------
 // Solo suma lo cargado. total = null si ninguna comida tiene proteína (no es lo mismo que 0 g).
 export function totalDia(comidas) {

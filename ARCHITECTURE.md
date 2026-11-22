@@ -68,3 +68,8 @@
 - `js/core/alimentos.js` (lógica pura): `MACROS` (calorías, carbohidratos, proteínas, grasas y su columna en alimentos y en comidas), validación de alimentos y porciones, `macrosDeCantidad` (valor por 100 × cantidad / 100), búsqueda sin tildes. `tests/alimentos.test.mjs`.
 - `js/modules/nutri/alimentos.js` (pestaña) y funciones nuevas en `nutri/datos.js` (tablas `foods` y `food_portions`; fallan si una consulta llega a 1000 filas).
 - Las comidas (`meals`) guardan una FOTO de lo que se comió (`food_name`, `amount` y las macros calculadas): cambiar o borrar un alimento no altera el historial. NULL = sin dato, nunca 0.
+
+## Comidas con alimentos y macros (ampliación 3-6b)
+- La pantalla `nutri/hoy.js` carga los alimentos y porciones de forma OPCIONAL (`Promise.allSettled`): si no se pueden leer, Hoy abre en modo «A mano». Las decisiones viven en `core/alimentos.js` (lógica pura): `calcularCantidad` (cantidad en g/ml o en porciones → cantidad total y macros, con los límites que acepta la base), `comidaDeAlimento` (arma la comida con su foto), `reescalarComida` (cambiar la cantidad recalcula proporcionalmente desde lo guardado, no desde el alimento actual), `totalesMacros` (solo suma lo cargado; sin dato es null).
+- La proteína del día sigue saliendo de `protein_g` de las comidas, así que la meta, el cierre y el cumplido automático de `core/nutri.js` funcionan igual con comidas de alimentos o a mano.
+- Reglas de coherencia: un solo envío a la vez por pantalla (`ocupado`), NULL ≠ 0, y las comidas guardan una foto (nombre, cantidad y macros) para que cambiar un alimento no altere el historial.

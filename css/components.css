@@ -82,6 +82,7 @@ details summary { cursor: pointer; color: var(--muted); }
 .card.pad .nota { margin-top: 8px; }
 
 .metricas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 4px; }
+.metricas.cuatro { grid-template-columns: repeat(2, 1fr); }
 .metrica { background: var(--bg); border-radius: 12px; padding: 10px 6px; text-align: center; }
 .metrica b { display: block; font-size: 1.5rem; }
 .metrica span { color: var(--muted); font-size: .75rem; }

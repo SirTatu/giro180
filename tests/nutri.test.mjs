@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  validarProteina, validarComida, totalDia, totalesPorDia, aviso, estadoProteina, decidirSincronizacion,
+  validarProteina, totalDia, totalesPorDia, aviso, estadoProteina, decidirSincronizacion,
   decidirCierre, resumenProteina, buscarHabitoProteina, NOTA_AUTO, NOTA_CIERRE, estaCerrado
 } from '../js/core/nutri.js';
 
@@ -16,14 +16,6 @@ test('validarProteina: vacío es null (no cargada), nunca 0', () => {
   assert.equal(validarProteina('0').valor, 0);
   assert.equal(validarProteina('32,5').valor, 32.5);
   for (const mal of ['abc', '-5', '501', '32.55']) assert.ok(validarProteina(mal).error, mal);
-});
-
-test('validarComida', () => {
-  assert.ok(validarComida({ tipo: 'brunch', descripcion: 'a' }).error);
-  assert.ok(validarComida({ tipo: 'cena', descripcion: '   ' }).error);
-  assert.ok(validarComida({ tipo: 'cena', descripcion: 'a'.repeat(301) }).error);
-  const v = validarComida({ tipo: 'cena', descripcion: ' Pollo con arroz ', proteina: '' });
-  assert.deepEqual(v.datos, { meal_type: 'cena', description: 'Pollo con arroz', protein_g: null });
 });
 
 test('totalDia: suma solo lo cargado; sin nada cargado es null, no 0', () => {

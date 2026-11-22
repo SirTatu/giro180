@@ -27,8 +27,8 @@
   - [x] 3-5a Informes con datos reales de Gym y Nutri (v0.14.0; confirmado por el usuario)
   - [x] 3-5b Panel con entrenos de la semana, proteína y agua de hoy (v0.15.0; confirmado por el usuario)
 - [ ] 3-6 Ampliación de Nutri: base de alimentos y las 4 macros
-  - [ ] 3-6a Migración 007 + pestaña Alimentos con porciones (v0.16.0, entregado; falta que el usuario lo pruebe)
-  - [ ] 3-6b Registrar comidas eligiendo un alimento y gramos o porciones; ver calorías, carbos, proteínas y grasas del día
+  - [x] 3-6a Migración 007 + pestaña Alimentos con porciones (v0.16.0; confirmado por el usuario)
+  - [ ] 3-6b Registrar comidas eligiendo un alimento y gramos o porciones; ver calorías, carbos, proteínas y grasas del día (v0.17.0, entregado; falta que el usuario lo pruebe)
   - [ ] 3-6c Pestaña Objetivos: objetivo por macro como «al menos», «como máximo» o «entre X e Y»; estado «excedido»; cierre del día; Historial, Informes y Panel con las 4 macros
 - Decisiones tomadas / abiertas de la etapa:
   - 3-6: decidido por el usuario: alimentos por 100 g (o 100 ml) + porciones opcionales; los objetivos se configuran en Nutri → Objetivos (los hábitos quedan por debajo, versionados); un día «excedido» NO cuenta como no cumplido en los porcentajes, solo se marca. Pendiente de resolver en 3-6c: eso exige un estado nuevo («excedido») en `habit_logs` y en `estados.js`, con su migración; hay que confirmar con el usuario el detalle antes de tocar nada.
@@ -38,6 +38,8 @@
   - Borrar un entrenamiento NO desmarca el hábito «Entrenar» de ese día (se corrige en Hoy). Evaluar si conviene automatizarlo.
 
 ## Ideas / pendientes
+- Hoy: al editar una comida de alimento solo se cambia la cantidad; cambiar de alimento exige borrar y cargar de nuevo (se podría permitir)
+- Hoy: recordar los alimentos usados más seguido o los últimos (atajos)
 - Alimentos: importar una lista pegando texto (como el importador de rutinas); no precargar nada en el código (el repo es público)
 - Panel: sumar los pasos de hoy a la tarjeta Gym y Nutri (si se quiere)
 - Repo: limpiar las copias viejas dentro de `js/core/` (README, ARCHITECTURE, CHANGELOG, DATABASE, TODO, sw.js, tests/ y js/ anidados) — no las usa la app

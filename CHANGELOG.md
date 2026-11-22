@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.17.0 — Etapa 3, ampliación 3-6b (comidas con alimentos y las 4 macros)
+- Sin migración SQL: usa las columnas de `meals` que agregó la 007.
+- **Nutri → Hoy** tiene dos formas de cargar una comida:
+  - **Con alimento**: buscás y elegís un alimento de tu base, ponés la cantidad en gramos o ml, o en **porciones** (por ejemplo «2» de «1 huevo = 50 g»), y ves en vivo las calorías, carbos, proteínas y grasas antes de guardar. Los alimentos archivados no aparecen.
+  - **A mano**: descripción y las 4 macros, todas opcionales; lo que dejás vacío queda como «sin dato» (NULL), nunca 0.
+- **Macros del día**: calorías, carbohidratos, proteínas y grasas (2 × 2), sumando solo lo cargado; sin datos muestran «—», y avisa «N comidas sin dato de …» por cada macro con faltantes. Cada comida de la lista muestra su cantidad y sus macros.
+- La comida guarda una **foto**: nombre, cantidad y macros calculadas. Si después cambiás o borrás el alimento, lo ya cargado no se altera.
+- **Editar**: una comida de alimento se edita solo por cantidad y las macros se recalculan proporcionalmente desde lo guardado (para cambiar de alimento se borra y se carga de nuevo); una comida a mano se edita completa.
+- La meta de **proteína** sigue funcionando igual, ahora también con comidas de alimentos. Los objetivos de calorías, carbos y grasas llegan en el 3-6c; Historial, Informes y Panel siguen midiendo proteína hasta entonces.
+- Protecciones: un doble toque agrega una sola comida; una cantidad que daría más de lo que acepta la base se frena antes con un mensaje claro; si no se pueden leer los alimentos, Hoy abre en modo «A mano» y avisa.
+- `js/core/alimentos.js` suma `validarComidaManual`, `opcionesCantidad`, `calcularCantidad`, `comidaDeAlimento`, `reescalarComida`, `totalesMacros`, `textoMacrosComida` y `avisosMacros`. Se retiró `validarComida` de `nutri.js` (la reemplaza `validarComidaManual`). 8 pruebas nuevas; total: 141. Estilo `.metricas.cuatro` en `css/components.css`.
+- Service Worker v0.17.0.
+
 ## 0.16.0 — Etapa 3, ampliación 3-6a (base de alimentos)
 - **Migración SQL 007** (`sql/007_alimentos.sql`) y su prueba de seguridad `sql/008_test_rls_alimentos.sql` (26 comprobaciones). Crea `foods` (alimentos con calorías, carbohidratos, proteínas y grasas **por 100 g o por 100 ml**) y `food_portions` (porciones con nombre, por ejemplo «1 huevo» = 50 g), ambas con RLS y exportables. Agrega a `meals` columnas OPCIONALES para las otras macros y la foto del alimento (`calories_kcal`, `carbs_g`, `fat_g`, `food_id`, `food_name`, `amount`). No borra ni cambia ningún dato: las comidas anteriores quedan igual y lo que no se cargó es NULL («sin dato»), nunca 0. **Orden obligatorio:** exportar respaldo → ejecutar 007 → ejecutar 008 (con tu User UID) → recién ahí subir los archivos de la app.
 - Pestaña **Alimentos** en Nutri: alta, edición y archivo de alimentos; porciones con nombre por alimento (alta y borrado); búsqueda sin distinguir mayúsculas ni tildes. Las 4 macros son obligatorias en un alimento (si es cero se escribe 0). Rechaza valores negativos, calorías de más de 1000 por 100 g y macros que suman más de 100 g por cada 100 g. Si las calorías no coinciden con las macros (4·C + 4·P + 9·G) avisa, pero deja guardar. Los nombres repetidos se rechazan con mensaje claro.
