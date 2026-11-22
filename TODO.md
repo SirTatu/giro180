@@ -15,29 +15,30 @@
 - [x] 2C-2 Pestaña «Informes»: seis informes en Markdown, botón copiar, guardar en saved_reports (probada y confirmada por el usuario)
 - [x] 2C-3 Exportación JSON/CSV de todos los datos (confirmada por el usuario)
 
-## Etapa 3 — Gym y Nutri
+## Etapa 3 — Gym y Nutri — cerrada
 - [x] 3-0 Migración SQL 003 (tablas) + prueba de seguridad 004 (ejecutadas y confirmadas por el usuario)
 - [x] 3-1 Gym: ejercicios y rutinas + importador (v0.9.0; el usuario continuó al 3-2)
 - [x] 3-2 Gym: registrar entrenamiento, historial y progresión (v0.10.0; confirmado por el usuario)
 - [x] 3-3 Gym: pasos y evolución corporal (v0.11.0; confirmado por el usuario)
-- [ ] 3-4 Nutri
+- [x] 3-4 Nutri
   - [x] 3-4a Comidas y proteína por comida + cierre del día (v0.12.0; confirmado por el usuario)
   - [x] 3-4b Agua, botellas y Cuerpo en Nutri (v0.13.0; confirmado por el usuario)
-- [ ] 3-5 Informes: sumar Gym y Nutri al INFORME GENERAL, indicadores, notas de especialistas y Panel
+- [x] 3-5 Informes: sumar Gym y Nutri al INFORME GENERAL, indicadores, notas de especialistas y Panel
   - [x] 3-5a Informes con datos reales de Gym y Nutri (v0.14.0; confirmado por el usuario)
-  - [ ] 3-5b Panel con entrenos de la semana, proteína y agua de hoy (v0.15.0, entregado; falta que el usuario lo pruebe)
-- Decisiones abiertas para el hito indicado:
+  - [x] 3-5b Panel con entrenos de la semana, proteína y agua de hoy (v0.15.0; confirmado por el usuario)
+- Decisiones tomadas / abiertas de la etapa:
   - 3-1: las rutinas NO van escritas en el código (el repo es público); se cargan pegando el texto en la app. Los ejercicios de nombre parecido los decide el usuario en la vista previa.
   - Ejercicio salteado: hoy no deja rastro (no hay filas). Si más adelante se quiere distinguir «salteado» de «no cargado», requiere una migración.
   - 3-4: decidido: la proteína del día se suma de las comidas; sin cierre explícito, por debajo de la meta es «sin completar»; «Cerrar el día» es manual; el agua sigue la misma regla (3-4b).
   - Borrar un entrenamiento NO desmarca el hábito «Entrenar» de ese día (se corrige en Hoy). Evaluar si conviene automatizarlo.
 
 ## Ideas / pendientes
+- Panel: sumar los pasos de hoy a la tarjeta Gym y Nutri (si se quiere)
+- Repo: limpiar las copias viejas dentro de `js/core/` (README, ARCHITECTURE, CHANGELOG, DATABASE, TODO, sw.js, tests/ y js/ anidados) — no las usa la app
 - Agua: no hay orden manual de botellas (van por nombre); no se guarda la hora de cada toma más allá de su fecha de creación
-- Agua: el hábito se crea a mano en Central → Hábitos (módulo Nutri, tipo cantidad, nombre con «Agua», unidad L)
 - Nutri → Cuerpo importa la pantalla desde `modules/gym/cuerpo.js`; si crece, moverla a `compartido/`
 - Nutri: un día cerrado no se recalcula solo al cambiar comidas (hay que reabrir y cerrar de nuevo)
-- Nutri: el hábito de proteína se crea a mano en Central → Hábitos (módulo Nutri, tipo cantidad, nombre con «Proteína»)
+- Nutri: los hábitos de proteína y de agua se crean a mano en Central → Hábitos (módulo Nutri, tipo cantidad, nombre con «Proteína» / «Agua», unidad g / L); se podrían crear desde las pestañas
 - Nutri: el historial lee como máximo 1000 comidas por consulta y avisa si se llega al límite
 - Importar / restaurar desde el JSON exportado (hoy la exportación es solo copia de seguridad de lectura)
 - Al crear tablas nuevas en cada etapa: sumarlas a `TABLAS_EXPORT` (js/core/exportar.js); la prueba automática avisa si se olvida

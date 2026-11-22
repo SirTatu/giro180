@@ -1,7 +1,7 @@
 -- =====================================================================
 -- Giro 180 — 004_test_rls_gym_nutri.sql  (prueba de seguridad y reglas de 003)
 -- 1) Ejecutá ANTES 003_gym_nutri.sql.
--- 2) Reemplazá PEGAR-AQUI-TU-USER-UID por el "User UID" de tu usuario
+-- 2) Reemplazá PEGAR-AQUI-TU-USER-UID (en la línea "yo uuid := ...") por el "User UID" de tu usuario
 --    (Supabase → Authentication → Users). Es el mismo que usaste en 002.
 -- 3) Ejecutá en SQL Editor.
 -- RESULTADO: "Success. No rows returned" = todo bien.
@@ -10,7 +10,7 @@
 -- =====================================================================
 do $$
 declare
-  yo uuid := 'e20c4dd1-2554-4fc1-b3fe-2506b338bc97'::uuid;
+  yo uuid := 'PEGAR-AQUI-TU-USER-UID'::uuid;
   ajeno uuid := gen_random_uuid();
   n int;
   fallo boolean;

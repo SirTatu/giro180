@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.1 — Cierre de la Etapa 3 (sin cambios funcionales)
+- La app no cambia: mismo código que la 0.15.0. Se sube la versión solo para que el Service Worker refresque su caché junto con el cierre.
+- `sql/004_test_rls_gym_nutri.sql` ya no trae tu User UID real escrito: usa el marcador `PEGAR-AQUI-TU-USER-UID` (como 002 y 006). Si volvés a ejecutarla, pegá tu UID en la línea `yo uuid := ...`. El UID viejo sigue visible en el historial de commits de GitHub; no es una clave y RLS lo protege, pero no es dato para un repo público.
+- README y TODO actualizados: Etapa 3 cerrada, próxima etapa por definir. Se unificaron notas repetidas en «Ideas / pendientes».
+- Auditoría de coherencia: `sw.js` lista todos los archivos de la app y ninguno falta; las 19 tablas creadas por SQL están exportadas y documentadas en DATABASE.md; los módulos importan sin errores aun sin las copias viejas de `js/core/`; 121 pruebas en verde.
+
 ## 0.15.0 — Etapa 3, hito 3-5b (Panel con Gym y Nutri)
 - El **Panel** de Central suma la tarjeta **Gym y Nutri** con tres números de un vistazo: entrenos registrados esta semana (lunes a hoy), proteína de hoy contra su meta y agua de hoy contra su meta. Debajo, notas cortas: faltan X g o X L, meta cumplida, día cerrado, comidas sin proteína cargada y, si existe el hábito Entrenar, cuántos días programados se cumplieron. Sin migración SQL.
 - Mismas reglas que en Nutri: por debajo de la meta es «sin completar» (nunca incumplido); sin comidas o sin tomas hoy se muestra «—», no 0 g ni 0 ml; «0 entrenos registrados» es un conteo de registros, no un incumplimiento.
