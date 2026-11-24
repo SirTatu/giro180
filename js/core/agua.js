@@ -69,7 +69,7 @@ export function totalesPorDia(tomas) {
 // ---------- estado del día y cierre ----------
 // log: registro del hábito ese día. «cerrado» = cualquier registro que no sea el automático.
 export function estadoAgua(log, t) {
-  if (log) return { estado: log.status === 'done' ? 'cumplido' : 'incumplido', cerrado: log.note !== NOTA_AUTO_AGUA };
+  if (log) return { estado: log.status === 'done' ? 'cumplido' : log.status === 'exceeded' ? 'excedido' : 'incumplido', cerrado: log.note !== NOTA_AUTO_AGUA };
   return { estado: t.cantidad > 0 ? 'sin_completar' : 'no_registrado', cerrado: false };
 }
 

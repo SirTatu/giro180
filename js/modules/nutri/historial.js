@@ -11,7 +11,7 @@ import * as D from './datos.js';
 import * as H from '../compartido/habitos.js';
 import { cajaError } from './ui.js';
 
-const ETIQUETA = { cumplido: 'Cumplido', incumplido: 'Incumplido', sin_completar: 'Sin completar', no_registrado: 'No registrado' };
+const ETIQUETA = { cumplido: 'Cumplido', incumplido: 'Incumplido', excedido: 'Excedido', sin_completar: 'Sin completar', no_registrado: 'No registrado' };
 const PERIODOS = [{ dias: 7, nombre: 'Últimos 7 días' }, { dias: 30, nombre: 'Últimos 30 días' }];
 const g = (n) => `${formatoNumero(n)} g`;
 const clase = (e) => (e === 'sin_completar' ? 'no_registrado' : e);

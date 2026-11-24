@@ -2,13 +2,14 @@
 import { h } from '../../core/dom.js';
 import { hoy } from '../../core/fechas.js';
 import { NOMBRES_MODULO, ORDEN_MODULOS, DIAS_CORTOS, DIAS_LETRA } from '../../core/constantes.js';
+import { textoObjetivo } from '../../core/estados.js';
 import * as D from './datos.js';
 
 const diasTexto = (arr) =>
   arr.length === 7 ? 'Todos los días' : [...arr].sort((a, b) => a - b).map((d) => DIAS_CORTOS[d]).join(', ');
 const tipoTexto = (v) => v.kind === 'boolean'
   ? 'Sí / No'
-  : `${v.kind === 'quantity' ? 'Cantidad' : 'Duración'}: ${v.target_value} ${v.unit ?? ''} o más`;
+  : `${v.kind === 'quantity' ? 'Cantidad' : 'Duración'}: ${textoObjetivo(v)}`.replace('  ', ' ');
 const orden = (a, b) =>
   ORDEN_MODULOS.indexOf(a.module) - ORDEN_MODULOS.indexOf(b.module) || a.name.localeCompare(b.name);
 
@@ -54,8 +55,10 @@ export async function renderHabitos(cont) {
       h('option', { value: 'duration' }, 'Duración'));
     const meta = h('input', { type: 'number', min: '0', step: 'any', inputmode: 'decimal', value: v?.target_value ?? '' });
     const unidad = h('input', { type: 'text', value: v?.unit ?? '', placeholder: 'g, ml, min…', maxLength: 20 });
+    const maximo = h('input', { type: 'number', min: '0', step: 'any', inputmode: 'decimal', value: v?.target_max ?? '' });
     const bloqueMeta = h('div', { class: 'dos-col' },
-      h('label', {}, 'Meta (se cumple con esta cantidad o más)', meta), h('label', {}, 'Unidad', unidad));
+      h('label', {}, 'Meta o mínimo (se cumple con esta cantidad o más)', meta), h('label', {}, 'Unidad', unidad),
+      h('label', {}, 'Máximo (opcional: si lo superás, el día queda «excedido»; con meta 0 es «como máximo»)', maximo));
     bloqueMeta.hidden = (v?.kind ?? 'boolean') === 'boolean';
 
     const dias = new Set(v?.scheduled_days ?? [1, 2, 3, 4, 5, 6, 7]);
@@ -81,13 +84,18 @@ export async function renderHabitos(cont) {
       const nom = nombre.value.trim();
       if (!nom) return mostrarError(new Error('Poné un nombre.'));
       if (dias.size === 0) return mostrarError(new Error('Elegí al menos un día.'));
-      let objetivo = null, uni = null;
+      let objetivo = null, uni = null, tope = null;
       if (tipo.value !== 'boolean') {
         objetivo = meta.valueAsNumber;
-        if (!(objetivo > 0)) return mostrarError(new Error('La meta debe ser un número mayor que 0.'));
+        tope = maximo.value.trim() === '' ? null : maximo.valueAsNumber;
+        if (tope !== null) {
+          if (!(tope > 0)) return mostrarError(new Error('El máximo debe ser un número mayor que 0 (o dejalo vacío).'));
+          if (!(objetivo >= 0)) return mostrarError(new Error('La meta o mínimo debe ser un número (0 o más).'));
+          if (tope < objetivo) return mostrarError(new Error('El máximo no puede ser menor que la meta.'));
+        } else if (!(objetivo > 0)) return mostrarError(new Error('La meta debe ser un número mayor que 0.'));
         uni = unidad.value.trim() || null;
       }
-      const campos = { name: nom, kind: tipo.value, target_value: objetivo, unit: uni,
+      const campos = { name: nom, kind: tipo.value, target_value: objetivo, target_max: tope, unit: uni,
         scheduled_days: [...dias].sort((a, b) => a - b) };
       boton.disabled = true;
       try {

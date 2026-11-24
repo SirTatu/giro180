@@ -16,7 +16,7 @@ import * as D from './datos.js';
 import * as H from '../compartido/habitos.js';
 import { cajaError } from './ui.js';
 
-const ETIQUETA = { cumplido: 'Cumplido', incumplido: 'Incumplido', sin_completar: 'Sin completar', no_registrado: 'No registrado' };
+const ETIQUETA = { cumplido: 'Cumplido', incumplido: 'Incumplido', excedido: 'Excedido', sin_completar: 'Sin completar', no_registrado: 'No registrado' };
 const g = (n) => `${formatoNumero(n)} g`;
 
 export function renderHoy(cont, ctx = {}) {

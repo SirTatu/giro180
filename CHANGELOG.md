@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.18.0 — Etapa 3, ampliación 3-6c1 (objetivos con máximo y estado «excedido»)
+- **Migración SQL 009** (`sql/009_excedido.sql`) y su prueba `sql/010_test_rls_excedido.sql` (15 comprobaciones). Agrega a `habit_definitions` la columna opcional `target_max` (máximo del objetivo) y permite un tercer estado, `exceeded`, en `habit_logs`. No borra ni cambia nada: todos tus hábitos y registros quedan exactamente igual. **Orden obligatorio:** exportar respaldo → ejecutar 009 → ejecutar 010 (con tu User UID) → recién ahí subir los archivos de la app.
+- **Objetivos con rango:** «al menos X» (como siempre: solo mínimo), «como máximo Y» (mínimo 0 y máximo Y) y «entre X e Y». Con máximo, `evaluar` da `exceeded` si te pasás, `done` entre el mínimo y el máximo (inclusive) y `missed` por debajo del mínimo. **Sin máximo todo se comporta exactamente igual que antes** (nunca da «excedido»).
+- **Estado «excedido»** (quinto estado, en `estados.js`): cuenta como **registrado**, pero **no como no cumplido** y queda **fuera del porcentaje** (ni lo sube ni lo baja). Se muestra aparte: Central → Hoy (insignia «Excedido» y el objetivo), Semana y Panel (aviso con la cantidad de días excedidos y detalle por hábito), y los Informes (INFORME GENERAL sin pasar de 15 líneas, indicadores por área, notas para especialistas, comparación y registro diario con el objetivo). La foto semanal guardada incluye los excedidos.
+- **Central → Hábitos**: el formulario suma el campo «Máximo (opcional)»; la lista muestra el objetivo («entre 1500 y 2000 kcal», «como máximo 2200 kcal», «120 g o más»). Al editar un hábito (también con historial, que crea una versión nueva) el máximo se **conserva**; antes de este cambio se habría perdido en silencio. Se acepta meta 0 solo si hay máximo («como máximo»).
+- Nutri: las pantallas de proteína y agua reconocen «excedido» (todavía no hay objetivos con máximo en Nutri: llegan en el 3-6c2).
+- `tests/excedido.test.mjs` (20 pruebas) y `tests/sql.test.mjs` (ahora cubre también 009/010 y que 009 solo agrega). Total: 161 pruebas.
+- Service Worker v0.18.0.
+
 ## 0.17.0 — Etapa 3, ampliación 3-6b (comidas con alimentos y las 4 macros)
 - Sin migración SQL: usa las columnas de `meals` que agregó la 007.
 - **Nutri → Hoy** tiene dos formas de cargar una comida:

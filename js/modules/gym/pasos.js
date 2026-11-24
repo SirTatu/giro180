@@ -63,7 +63,7 @@ export function renderPasos(cont) {
       try {
         const status = evaluar(version, v.valor);
         await D.guardarLogPasos({ habit_id: version.id, log_date: fecha, status, value: v.valor });
-        await cargar(fecha, `Guardado: ${miles(v.valor)} pasos (${status === 'done' ? 'meta cumplida' : 'por debajo de la meta'}).`);
+        await cargar(fecha, `Guardado: ${miles(v.valor)} pasos (${status === 'done' ? 'meta cumplida' : status === 'exceeded' ? 'por encima del máximo' : 'por debajo de la meta'}).`);
       } catch (e) { msg.textContent = traducirError(e); guardar.disabled = false; }
     });
 

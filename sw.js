@@ -1,6 +1,6 @@
 // Service Worker de Giro 180
 // Al cambiar archivos de la app, subí el número de VERSION para forzar la actualización.
-const VERSION = 'giro180-v0.17.0';
+const VERSION = 'giro180-v0.18.0';
 const ARCHIVOS = [
   './',
   'index.html',

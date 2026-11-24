@@ -2,12 +2,12 @@
 import { h } from '../../core/dom.js';
 import { hoy, sumarDias, etiquetaLarga } from '../../core/fechas.js';
 import { NOMBRES_MODULO, ORDEN_MODULOS } from '../../core/constantes.js';
-import { agruparPorSerie, estadoDia, evaluar, logsDeSerie, ESTADO } from '../../core/estados.js';
+import { agruparPorSerie, estadoDia, evaluar, logsDeSerie, ESTADO, textoObjetivo } from '../../core/estados.js';
 import * as D from './datos.js';
 
-const TEXTO_ESTADO = { cumplido: 'Cumplido', incumplido: 'Incumplido', no_registrado: 'Sin registrar' };
+const TEXTO_ESTADO = { cumplido: 'Cumplido', incumplido: 'Incumplido', excedido: 'Excedido', no_registrado: 'Sin registrar' };
 const textoMeta = (v) =>
-  v && v.kind !== 'boolean' ? `Meta: ${v.target_value} ${v.unit ?? ''} o más`.replace('  ', ' ') : '';
+  v && v.kind !== 'boolean' ? `${v.target_max != null ? 'Objetivo' : 'Meta'}: ${textoObjetivo(v)}`.replace('  ', ' ') : '';
 
 export async function renderHoy(cont, ctx) {
   const userId = ctx.session.user.id;

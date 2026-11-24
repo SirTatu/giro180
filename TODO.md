@@ -28,10 +28,14 @@
   - [x] 3-5b Panel con entrenos de la semana, proteína y agua de hoy (v0.15.0; confirmado por el usuario)
 - [ ] 3-6 Ampliación de Nutri: base de alimentos y las 4 macros
   - [x] 3-6a Migración 007 + pestaña Alimentos con porciones (v0.16.0; confirmado por el usuario)
-  - [ ] 3-6b Registrar comidas eligiendo un alimento y gramos o porciones; ver calorías, carbos, proteínas y grasas del día (v0.17.0, entregado; falta que el usuario lo pruebe)
-  - [ ] 3-6c Pestaña Objetivos: objetivo por macro como «al menos», «como máximo» o «entre X e Y»; estado «excedido»; cierre del día; Historial, Informes y Panel con las 4 macros
+  - [x] 3-6b Registrar comidas eligiendo un alimento y gramos o porciones; ver calorías, carbos, proteínas y grasas del día (v0.17.0; confirmado por el usuario)
+  - [ ] 3-6c Objetivos por macro con rango y estado «excedido» (se divide en tres)
+    - [ ] 3-6c1 Migración 009 (máximo en el objetivo y estado «excedido») + `estados.js` + pantallas de Central e Informes (v0.18.0, entregado; falta que el usuario lo pruebe)
+    - [ ] 3-6c2 Pestaña Nutri → Objetivos (por macro: «al menos» / «como máximo» / «entre X e Y», versionado) + Hoy con el estado de cada macro, cumplido y excedido automáticos y un solo botón «Cerrar el día»
+    - [ ] 3-6c3 Historial, Informes (informe y notas) y Panel con las 4 macros y sus excedidos
 - Decisiones tomadas / abiertas de la etapa:
   - 3-6: decidido por el usuario: alimentos por 100 g (o 100 ml) + porciones opcionales; los objetivos se configuran en Nutri → Objetivos (los hábitos quedan por debajo, versionados); un día «excedido» NO cuenta como no cumplido en los porcentajes, solo se marca. Pendiente de resolver en 3-6c: eso exige un estado nuevo («excedido») en `habit_logs` y en `estados.js`, con su migración; hay que confirmar con el usuario el detalle antes de tocar nada.
+  - 3-6c: decidido por el usuario: «excedido» se guarda como estado nuevo y explícito (`exceeded`); en un objetivo «como máximo» el día se marca cumplido recién al cerrar el día (pasarse del máximo marca «excedido» enseguida); un solo botón «Cerrar el día» cierra todas las macros con objetivo y datos (las que no tienen ningún dato quedan sin registrar; pide confirmación si hay comidas sin dato).
   - 3-1: las rutinas NO van escritas en el código (el repo es público); se cargan pegando el texto en la app. Los ejercicios de nombre parecido los decide el usuario en la vista previa.
   - Ejercicio salteado: hoy no deja rastro (no hay filas). Si más adelante se quiere distinguir «salteado» de «no cargado», requiere una migración.
   - 3-4: decidido: la proteína del día se suma de las comidas; sin cierre explícito, por debajo de la meta es «sin completar»; «Cerrar el día» es manual; el agua sigue la misma regla (3-4b).

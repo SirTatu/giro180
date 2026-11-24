@@ -73,3 +73,10 @@
 - La pantalla `nutri/hoy.js` carga los alimentos y porciones de forma OPCIONAL (`Promise.allSettled`): si no se pueden leer, Hoy abre en modo «A mano». Las decisiones viven en `core/alimentos.js` (lógica pura): `calcularCantidad` (cantidad en g/ml o en porciones → cantidad total y macros, con los límites que acepta la base), `comidaDeAlimento` (arma la comida con su foto), `reescalarComida` (cambiar la cantidad recalcula proporcionalmente desde lo guardado, no desde el alimento actual), `totalesMacros` (solo suma lo cargado; sin dato es null).
 - La proteína del día sigue saliendo de `protein_g` de las comidas, así que la meta, el cierre y el cumplido automático de `core/nutri.js` funcionan igual con comidas de alimentos o a mano.
 - Reglas de coherencia: un solo envío a la vez por pantalla (`ocupado`), NULL ≠ 0, y las comidas guardan una foto (nombre, cantidad y macros) para que cambiar un alimento no altere el historial.
+
+## Objetivos con máximo y estado «excedido» (ampliación 3-6c1)
+- `estados.js` sigue siendo el único lugar donde se decide qué significa cada día; ahora con un quinto estado: `excedido` (registro con `status = 'exceeded'`). Cuenta como registrado, NO como no cumplido y queda fuera del porcentaje: `pct = cumplidos / (cumplidos + incumplidos)` y `cobertura` incluye los excedidos.
+- `evaluar(version, valor)`: sin `target_max` es idéntico al de siempre; con máximo da `exceeded` si lo superás. `tipoObjetivo` y `textoObjetivo` describen el objetivo («120 g o más», «como máximo 2000 kcal», «entre 1500 y 2000 kcal»).
+- `combinar` suma `excedidos` y tolera resúmenes viejos sin ese campo. Los consumidores (Central Hoy / Semana / Panel / Hábitos, Informes, Nutri) muestran el excedido aparte; lo que antes calculaba `programados - cumplidos - incumplidos` ahora usa los contadores del resumen.
+- Central → Hábitos conserva y permite editar el máximo: `nuevaVersion` solo copia lo que trae el formulario, así que `target_max` se envía siempre (null si no hay).
+- La migración 009 solo agrega: columna opcional y un valor más permitido en `status`.

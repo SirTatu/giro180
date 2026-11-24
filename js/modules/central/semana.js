@@ -82,6 +82,7 @@ export function renderSemana(cont, ctx) {
             etiquetaDelta(c.pct.delta)),
           sem.anterior.total.cumplidos + sem.anterior.total.incumplidos === 0
             ? h('p', { class: 'nota' }, 'La semana anterior no tiene registros: no hay base de comparación (no es un 0 %).') : null,
+          t.excedidos ? h('p', { class: 'nota' }, `${pl(t.excedidos, 'día excedido', 'días excedidos')} (pasó el máximo del objetivo): se muestran aparte y no cuentan como no cumplidos.`) : null,
           h('p', { class: 'nota' }, 'El % se calcula solo sobre lo registrado: un día sin registrar no cuenta como incumplimiento.')]
         : h('p', { class: 'nota' }, series.size ? 'No hay hábitos programados en este período.' : 'Todavía no hay hábitos. Creá el primero en la pestaña «Hábitos».'));
 
@@ -108,7 +109,7 @@ export function renderSemana(cont, ctx) {
     const tarjetaHabitos = detalle.length
       ? h('details', { class: 'card pad' }, h('summary', {}, `Detalle por hábito (${detalle.length})`),
           ...detalle.map((d) => h('p', { class: 'fila-meta' },
-            `${NOMBRES_MODULO[d.module] ?? d.module} · ${d.nombre}: ${pl(d.cumplidos, 'cumplido', 'cumplidos')}, ${pl(d.incumplidos, 'no cumplido', 'no cumplidos')}, ${d.noRegistrados} sin registrar`)))
+            `${NOMBRES_MODULO[d.module] ?? d.module} · ${d.nombre}: ${pl(d.cumplidos, 'cumplido', 'cumplidos')}, ${pl(d.incumplidos, 'no cumplido', 'no cumplidos')}${d.excedidos ? `, ${pl(d.excedidos, 'excedido', 'excedidos')}` : ''}, ${d.noRegistrados} sin registrar`)))
       : null;
 
     // Prioridades que regían al cierre de esa semana

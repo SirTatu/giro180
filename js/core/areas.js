@@ -315,6 +315,7 @@ export function textoPanel(ind) {
     metricas.push({ valor: p.total == null ? '—' : `${formatoNumero(p.total)} g`, etiqueta: `Proteína de hoy${p.meta != null ? ` · meta ${formatoNumero(p.meta)} g` : ''}`, clase: p.estado === 'cumplido' ? 'ok' : '' });
     if (p.estado === 'cumplido') notas.push('Proteína: meta cumplida.');
     else if (p.estado === 'incumplido') notas.push('Proteína: día cerrado como incumplido.');
+    else if (p.estado === 'excedido') notas.push('Proteína: pasó el máximo (excedido).');
     else if (p.estado === 'sin_completar') notas.push(`Proteína: sin completar${p.falta != null ? ` · faltan ${formatoNumero(p.falta)} g` : ''}.`);
     else if (p.estado === 'no_registrado') notas.push('Proteína: todavía no cargaste comidas hoy.');
     else if (p.cantidad === 0) notas.push('Proteína: todavía no cargaste comidas hoy.');
@@ -327,6 +328,7 @@ export function textoPanel(ind) {
     metricas.push({ valor: a.cantidad ? formatoMl(a.ml) : '—', etiqueta: `Agua de hoy${a.metaMl != null ? ` · meta ${formatoMl(a.metaMl)}` : ''}`, clase: a.estado === 'cumplido' ? 'ok' : '' });
     if (a.estado === 'cumplido') notas.push('Agua: meta cumplida.');
     else if (a.estado === 'incumplido') notas.push('Agua: día cerrado como incumplido.');
+    else if (a.estado === 'excedido') notas.push('Agua: pasó el máximo (excedido).');
     else if (a.estado === 'sin_completar') notas.push(`Agua: sin completar${a.falta != null ? ` · faltan ${formatoMl(a.falta)}` : ''}.`);
     else if (a.cantidad === 0) notas.push('Agua: todavía no cargaste tomas hoy.');
   }

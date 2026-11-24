@@ -4,7 +4,7 @@
 // estados.js; acá solo se leen sus resultados. Un dato sin registrar NUNCA se presenta como incumplimiento.
 import { diaISO, sumarDias, rango, etiquetaLarga } from './fechas.js';
 import { NOMBRES_MODULO, ORDEN_MODULOS } from './constantes.js';
-import { ESTADO, estadoDia, logsDeSerie, resumenSerie, resumenGlobal } from './estados.js';
+import { ESTADO, estadoDia, logsDeSerie, resumenSerie, resumenGlobal, textoObjetivo } from './estados.js';
 import { fragmentosCortos, hayDatosArea, lineasArea, lineasComparacion, lineasDia } from './areas.js';
 
 // Chats especialistas. El Pedagogo cubre el módulo Estudio.
@@ -115,7 +115,7 @@ export function calcularSemana({ series, logs, entradas = [], lunes, hoy: hoyStr
 // Versión SOLO con datos simples (sin Map) para guardar como foto en weekly_reviews.indicators (jsonb).
 export function aIndicadores(sem) {
   const plano = (r) => ({
-    cumplidos: r.cumplidos, incumplidos: r.incumplidos, noRegistrados: r.noRegistrados,
+    cumplidos: r.cumplidos, incumplidos: r.incumplidos, excedidos: r.excedidos ?? 0, noRegistrados: r.noRegistrados,
     sinActividad: r.sinActividad, programados: r.programados, pct: r.pct, cobertura: r.cobertura
   });
   return {
@@ -148,7 +148,8 @@ export function filasDelDia(series, logs, fecha) {
     const v = d.version ?? versiones[versiones.length - 1];
     filas.push({
       nombre: v.name, module: v.module, estado: d.estado, extra: d.extra,
-      valor: d.log?.value ?? null, meta: v.kind !== 'boolean' ? v.target_value : null, unidad: v.unit ?? ''
+      valor: d.log?.value ?? null, meta: v.kind !== 'boolean' ? v.target_value : null, unidad: v.unit ?? '',
+      max: v.kind !== 'boolean' ? v.target_max ?? null : null
     });
   }
   const orden = (m) => ORDEN_MODULOS.indexOf(m);
@@ -159,6 +160,7 @@ export function filasDelDia(series, logs, fecha) {
 const TEXTO_ESTADO = {
   [ESTADO.CUMPLIDO]: 'cumplido',
   [ESTADO.INCUMPLIDO]: 'NO cumplido',
+  [ESTADO.EXCEDIDO]: 'EXCEDIDO (pasó el máximo; no cuenta como incumplimiento)',
   [ESTADO.NO_REGISTRADO]: 'sin registrar'
 };
 
@@ -171,9 +173,11 @@ function textoPeriodo(p) {
 function lineaModulo(nombre, r, cmp) {
   if (!r) return `${nombre}: sin hábitos definidos todavía`;
   if (!r.programados) return `${nombre}: sin actividad programada en el período`;
-  if (r.cumplidos + r.incumplidos === 0) return `${nombre}: sin registros (${r.noRegistrados} sin registrar; no cuenta como incumplimiento)`;
+  const exc = r.excedidos ? ` · ${pl(r.excedidos, 'día excedido', 'días excedidos')} (no cuenta como incumplimiento)` : '';
+  if (r.cumplidos + r.incumplidos === 0 && !r.excedidos) return `${nombre}: sin registros (${r.noRegistrados} sin registrar; no cuenta como incumplimiento)`;
+  if (r.cumplidos + r.incumplidos === 0) return `${nombre}: sin días evaluables${exc} · ${r.noRegistrados} sin registrar`;
   const comp = cmp ? ` · vs anterior: ${fmtDelta(cmp.pct.delta)}` : '';
-  return `${nombre}: ${fmtPct(r.pct)} cumplido (${r.cumplidos} de ${r.cumplidos + r.incumplidos} registrados) · registrado ${fmtPct(r.cobertura)}${comp}`;
+  return `${nombre}: ${fmtPct(r.pct)} cumplido (${r.cumplidos} de ${r.cumplidos + r.incumplidos} registrados) · registrado ${fmtPct(r.cobertura)}${exc}${comp}`;
 }
 
 // 1) Registro diario consolidado
@@ -184,7 +188,8 @@ export function registroDiarioMd({ fecha, filas, entrada, extras = [] }) {
   for (const f of filas) {
     if (f.module !== moduloActual) { moduloActual = f.module; L.push(`**${NOMBRES_MODULO[f.module] ?? f.module}**`); }
     let detalle = TEXTO_ESTADO[f.estado];
-    if (f.valor != null) detalle += ` (${f.valor}${f.unidad ? ' ' + f.unidad : ''}${f.meta != null ? ` · meta ${f.meta}` : ''})`;
+    const objetivo = f.max != null ? ` · objetivo ${textoObjetivo({ target_value: f.meta, target_max: f.max, unit: f.unidad })}` : f.meta != null ? ` · meta ${f.meta}` : '';
+    if (f.valor != null) detalle += ` (${f.valor}${f.unidad ? ' ' + f.unidad : ''}${objetivo})`;
     if (f.extra) detalle += ' · día no programado';
     L.push(`- ${una_linea(f.nombre)}: ${detalle}`);
   }
@@ -205,7 +210,7 @@ export function resumenSemanalMd(sem, { revision = null, prioridades = [] } = {}
   if (!t.programados) {
     L.push('- No hay hábitos programados en este período.');
   } else {
-    L.push(`- **Cumplimiento:** ${fmtPct(t.pct)} (${pl(t.cumplidos, 'cumplido', 'cumplidos')}, ${pl(t.incumplidos, 'no cumplido', 'no cumplidos')})`);
+    L.push(`- **Cumplimiento:** ${fmtPct(t.pct)} (${pl(t.cumplidos, 'cumplido', 'cumplidos')}, ${pl(t.incumplidos, 'no cumplido', 'no cumplidos')})${t.excedidos ? ` · ${pl(t.excedidos, 'día excedido', 'días excedidos')}: no cuentan como no cumplidos` : ''}`);
     L.push(`- **Registrado:** ${fmtPct(t.cobertura)} · ${t.noRegistrados} sin registrar (dato faltante, no incumplimiento)`);
   }
   const a = sem.animo.actual;
@@ -248,7 +253,7 @@ export function indicadoresAreaMd(sem, series, logs, areas = null) {
     if (r) {
       for (const d of detalleHabitos(series, logs, sem.periodo.desde, sem.periodo.hasta, [m])) {
         if (!d.programados) continue;
-        const extra = d.noRegistrados ? `, ${d.noRegistrados} sin registrar` : '';
+        const extra = (d.excedidos ? `, ${pl(d.excedidos, 'excedido', 'excedidos')}` : '') + (d.noRegistrados ? `, ${d.noRegistrados} sin registrar` : '');
         L.push(`- ${una_linea(d.nombre)}: ${pl(d.cumplidos, 'cumplido', 'cumplidos')}, ${pl(d.incumplidos, 'no cumplido', 'no cumplidos')}${extra}`);
       }
     }
@@ -271,7 +276,7 @@ export function notaEspecialistaMd(esp, sem, series, logs, { prioridades = [], a
     if (r) {
       for (const d of detalleHabitos(series, logs, sem.periodo.desde, sem.periodo.hasta, [m])) {
         if (!d.programados) continue;
-        L.push(`  - ${una_linea(d.nombre)}: ${pl(d.cumplidos, 'cumplido', 'cumplidos')}, ${pl(d.incumplidos, 'no cumplido', 'no cumplidos')}, ${d.noRegistrados} sin registrar`);
+        L.push(`  - ${una_linea(d.nombre)}: ${pl(d.cumplidos, 'cumplido', 'cumplidos')}, ${pl(d.incumplidos, 'no cumplido', 'no cumplidos')}${d.excedidos ? `, ${pl(d.excedidos, 'excedido', 'excedidos')}` : ''}, ${d.noRegistrados} sin registrar`);
       }
     }
     L.push(...lineasArea(areas, m));
@@ -300,7 +305,7 @@ export function informeGeneralMd(sem, { prioridades = [], revision = null, areas
   if (!t.programados) {
     L.push('- Sin hábitos programados en el período.');
   } else {
-    L.push(`- **Cumplimiento:** ${fmtPct(t.pct)} (registrado ${fmtPct(t.cobertura)}) · vs semana anterior: ${fmtDelta(c.pct.delta)}`);
+    L.push(`- **Cumplimiento:** ${fmtPct(t.pct)} (registrado ${fmtPct(t.cobertura)}) · vs semana anterior: ${fmtDelta(c.pct.delta)}${t.excedidos ? ` · ${pl(t.excedidos, 'día excedido', 'días excedidos')} (no cuentan como no cumplidos)` : ''}`);
     L.push(`- **Sin registrar:** ${t.noRegistrados} de ${t.programados} programados (dato faltante, no incumplimiento)`);
   }
   const a = sem.animo.actual;

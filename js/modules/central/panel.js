@@ -4,6 +4,7 @@ import { hoy, lunesDe, etiquetaLarga, formatoFechaHora } from '../../core/fechas
 import { NOMBRES_MODULO, ORDEN_MODULOS } from '../../core/constantes.js';
 import { agruparPorSerie, resumenGlobal } from '../../core/estados.js';
 import { indicadoresPanel, textoPanel } from '../../core/areas.js';
+import { pl } from '../../core/informes.js';
 import { MODULOS } from '../registry.js';
 import * as D from './datos.js';
 import * as GD from '../gym/datos.js';
@@ -57,6 +58,7 @@ export async function renderPanel(cont, ctx) {
           metrica(dia.cumplidos, 'Cumplidos', 'ok'), metrica(dia.incumplidos, 'No cumplidos', 'bad'),
           metrica(dia.noRegistrados, 'Sin registrar', 'warn'))
       : h('p', { class: 'nota' }, series.size ? 'No hay hábitos programados para hoy.' : 'Todavía no hay hábitos. Creá el primero en la pestaña «Hábitos».'),
+    dia.excedidos ? h('p', { class: 'nota' }, `${pl(dia.excedidos, 'excedido', 'excedidos')} hoy (pasó el máximo del objetivo): no cuenta como no cumplido.`) : null,
     extra.length ? h('p', { class: 'nota' }, extra.join(' · ')) : null);
 
   // Gym y Nutri de un vistazo: entrenos de la semana, proteína y agua de hoy
@@ -80,6 +82,7 @@ export async function renderPanel(cont, ctx) {
       ? [h('div', { class: 'metricas' },
           metrica(pct(t.pct), 'Cumplido'), metrica(pct(t.cobertura), 'Registrado'), metrica(t.noRegistrados, 'Sin registrar', 'warn')),
         ...filasModulo,
+        t.excedidos ? h('p', { class: 'nota' }, `${pl(t.excedidos, 'día excedido', 'días excedidos')} esta semana: se muestran aparte y no cuentan como no cumplidos.`) : null,
         h('p', { class: 'nota' }, 'El % de cumplimiento se calcula solo sobre lo registrado: un día sin registrar no cuenta como incumplimiento.')]
       : h('p', { class: 'nota' }, 'Todavía no hay hábitos programados esta semana.'));
 

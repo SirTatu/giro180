@@ -58,7 +58,7 @@ export const estaCerrado = (log, notaAuto = NOTA_AUTO) => !!log && log.note !== 
 
 // Qué mostrar. estado: cumplido · incumplido · sin_completar (hay comidas, sin registro) · no_registrado (nada cargado).
 export function estadoProteina(log, t) {
-  if (log) return { estado: log.status === 'done' ? 'cumplido' : 'incumplido', cerrado: estaCerrado(log) };
+  if (log) return { estado: log.status === 'done' ? 'cumplido' : log.status === 'exceeded' ? 'excedido' : 'incumplido', cerrado: estaCerrado(log) };
   return { estado: t.cantidad > 0 ? 'sin_completar' : 'no_registrado', cerrado: false };
 }
 
