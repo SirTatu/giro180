@@ -2,9 +2,10 @@
 // Pruebas en tests/areas.test.mjs. Reglas: un dato que no se cargó o no se pudo leer NUNCA se muestra como 0 ni como
 // incumplimiento; promedios solo sobre días con dato; todo lo que no se puede calcular es null y el texto lo dice.
 import { totales, progresionEjercicio, formatoNumero, buscarHabitoEntrenar } from './entrenos.js';
-import { resumenSerie } from './estados.js';
+import { resumenSerie, textoObjetivo } from './estados.js';
 import { buscarHabitoPasos, resumenPasos, tendenciaMedidas, formatoDelta } from './cuerpo.js';
-import { buscarHabitoProteina, totalesPorDia as comidasPorDia, aviso, totalDia, estadoProteina } from './nutri.js';
+import { MACROS, totalesMacros, totalesMacrosPorDia } from './alimentos.js';
+import { NOTA_AUTO_MACRO, buscarHabitoMacro, estadoMacro, notaMacro, resumenMacroPeriodo } from './macros.js';
 import { buscarHabitoAgua, totalesPorDia as tomasPorDia, metaEnMl, formatoMl, totalAgua, estadoAgua } from './agua.js';
 
 const pl = (n, s, p) => `${n} ${n === 1 ? s : p}`;
@@ -59,28 +60,33 @@ function cuerpoArea(medidas, hasta) {
   return peso.ultimo || cintura.ultimo ? { peso, cintura } : { peso: null, cintura: null };
 }
 
+// Promedio de un valor por día SOLO sobre los días con dato (se usa para el agua; las macros usan resumenMacroPeriodo).
 function promedioPorDia(porDia, p, valorDe) {
-  let n = 0, suma = 0, mejor = null, faltantes = 0, conComidas = 0;
+  let n = 0, suma = 0, mejor = null;
   for (const [f, t] of porDia) {
     if (!enRango(f, p)) continue;
-    conComidas++;
-    if (t.sinProteina > 0) faltantes++;
     const v = valorDe(t);
     if (v == null) continue;
     n++; suma += v;
     if (!mejor || v > mejor.valor) mejor = { fecha: f, valor: v };
   }
-  return { conDato: n, promedio: n ? suma / n : null, mejor, diasConFaltantes: faltantes, diasConRegistro: conComidas };
+  return { conDato: n, promedio: n ? suma / n : null, mejor };
 }
 
-function nutriArea(defs, comidas, tomas, periodo, anterior) {
+function nutriArea(defs, logs, comidas, tomas, periodo, anterior) {
   if (!comidas && !tomas) return null;
-  const out = { proteina: null, agua: null };
+  const out = { macros: null, agua: null };
   if (comidas) {
-    const por = comidasPorDia(comidas);
-    const p = promedioPorDia(por, periodo, (t) => t.total), a = promedioPorDia(por, anterior, (t) => t.total);
-    const v = buscarHabitoProteina(defs, periodo.hasta).version;
-    out.proteina = { actual: { ...p, promedio: p.promedio == null ? null : r1(p.promedio) }, anterior: { promedio: a.promedio == null ? null : r1(a.promedio), conDato: a.conDato }, meta: v ? Number(v.target_value) : null };
+    const porDia = totalesMacrosPorDia(comidas);
+    out.macros = MACROS.map((m) => {
+      const hab = buscarHabitoMacro(defs, periodo.hasta, m.id);
+      const resumen = (p) => resumenMacroPeriodo({ versiones: hab.versiones, logs, porDia, macroId: m.id, desde: p.desde, hasta: p.hasta });
+      const a = resumen(periodo), b = resumen(anterior);
+      return {
+        macro: m, objetivo: hab.version ? textoObjetivo(hab.version) : null,
+        actual: a, anterior: { promedio: b.promedio, conDato: b.conDato }
+      };
+    });
   }
   if (tomas) {
     const por = tomasPorDia(tomas);
@@ -100,7 +106,7 @@ export function calcularAreas({ series, logs, datos = {}, periodo, anterior }) {
     gym: gymOk ? { actual: agregadoGym(sesiones, sets, periodo), anterior: agregadoGym(sesiones, sets, anterior), progresion: progresionGym(sesiones, sets, ejercicios, periodo) } : null,
     pasos: pasosArea(defs, logs, periodo, anterior),
     cuerpo: cuerpoArea(medidas, periodo.hasta),
-    nutri: nutriArea(defs, comidas, tomas, periodo, anterior),
+    nutri: nutriArea(defs, logs, comidas, tomas, periodo, anterior),
     periodo,
     faltantes: [
       ...(!gymOk ? ['entrenamientos de Gym'] : []), ...(comidas == null ? ['comidas de Nutri'] : []),
@@ -120,7 +126,7 @@ const textoPeso = (c) => {
 export function hayDatosArea(areas, modulo) {
   if (!areas) return false;
   if (modulo === 'gym') return !!(areas.gym && (areas.gym.actual.sesiones || areas.gym.anterior.sesiones)) || !!areas.pasos?.actual.conDato || !!areas.cuerpo?.peso;
-  if (modulo === 'nutri') return !!(areas.nutri?.proteina?.actual.conDato || areas.nutri?.agua?.actual.conDato);
+  if (modulo === 'nutri') return !!(areas.nutri?.macros?.some((x) => x.actual.conDato) || areas.nutri?.agua?.actual.conDato);
   return false;
 }
 
@@ -139,7 +145,10 @@ export function fragmentosCortos(areas, modulo) {
   }
   if (modulo === 'nutri') {
     const n = areas.nutri;
-    if (n?.proteina?.actual.promedio != null) f.push(`proteína ${formatoNumero(n.proteina.actual.promedio)} g/día`);
+    const etiqueta = { kcal: 'calorías', carbs: 'carbos', protein: 'proteína', fat: 'grasas' };
+    for (const x of n?.macros ?? []) {
+      if (x.actual.promedio != null) f.push(`${etiqueta[x.macro.id]} ${formatoNumero(x.actual.promedio)} ${x.macro.unidad}/día`);
+    }
     if (n?.agua?.actual.promedio != null) f.push(`agua ${formatoMl(n.agua.actual.promedio)}/día`);
   }
   return f;
@@ -189,14 +198,18 @@ function lineasNutri(areas) {
   const n = areas.nutri;
   const L = [];
   if (!n) return L;
-  if (n.proteina) {
-    const a = n.proteina.actual, b = n.proteina.anterior;
-    if (a.promedio == null) L.push(`- Proteína: sin proteína cargada en el período${a.diasConRegistro ? ` (${pl(a.diasConRegistro, 'día', 'días')} con comidas pero sin dato de proteína)` : ''}`);
-    else {
-      const meta = n.proteina.meta != null ? ` · meta ${formatoNumero(n.proteina.meta)} g` : '';
-      const falt = a.diasConFaltantes ? ` · ${pl(a.diasConFaltantes, 'día', 'días')} con comidas sin proteína cargada (el promedio solo suma lo cargado)` : '';
-      L.push(`- Proteína: promedio ${formatoNumero(a.promedio)} g/día sobre ${pl(a.conDato, 'día', 'días')} con dato${meta} · mejor día ${formatoNumero(a.mejor.valor)} g (${ddmm(a.mejor.fecha)})${b.promedio != null ? ` · período anterior: ${formatoNumero(b.promedio)} g/día` : ''}${falt}`);
-    }
+  for (const x of n.macros ?? []) {
+    const m = x.macro, a = x.actual, u = m.unidad;
+    if (!x.objetivo && !a.conDato) continue;                                  // sin objetivo y sin datos: no hay nada que contar
+    const obj = x.objetivo ? ` · objetivo ${x.objetivo}` : '';
+    if (!a.conDato) { L.push(`- ${m.nombre}: sin datos cargados en el período${obj}`); continue; }
+    const e = a.estados;
+    const estados = e
+      ? ` · ${pl(e.cumplidos, 'cumplido', 'cumplidos')}, ${pl(e.incumplidos, 'no cumplido', 'no cumplidos')}, ${pl(e.excedidos, 'excedido', 'excedidos')}${e.excedidos ? ' (no cuentan como no cumplidos)' : ''}, ${pl(a.pendientes, 'día sin cerrar', 'días sin cerrar')}`
+      : '';
+    const ant = x.anterior.promedio != null ? ` · período anterior: ${formatoNumero(x.anterior.promedio)} ${u}/día` : '';
+    const parc = a.diasParciales ? ` · ${pl(a.diasParciales, 'día', 'días')} con comidas sin dato de ${m.nombre.toLowerCase()} (el promedio solo suma lo cargado)` : '';
+    L.push(`- ${m.nombre}: promedio ${formatoNumero(a.promedio)} ${u}/día sobre ${pl(a.conDato, 'día', 'días')} con dato${obj}${estados} · día más alto ${formatoNumero(a.mayor.valor)} ${u} (${ddmm(a.mayor.fecha)})${ant}${parc}`);
   }
   if (n.agua) {
     const a = n.agua.actual, b = n.agua.anterior;
@@ -234,9 +247,10 @@ export function lineasComparacion(areas) {
   if (ps && (ps.actual.promedio != null || ps.anterior.promedio != null)) {
     L.push(`- Pasos (promedio/día): ${ps.actual.promedio != null ? miles(ps.actual.promedio) : 'sin datos'} vs ${ps.anterior.promedio != null ? miles(ps.anterior.promedio) : 'sin datos'}`);
   }
-  const p = areas.nutri?.proteina;
-  if (p && (p.actual.promedio != null || p.anterior.promedio != null)) {
-    L.push(`- Proteína (promedio/día): ${p.actual.promedio != null ? formatoNumero(p.actual.promedio) + ' g' : 'sin datos'} vs ${p.anterior.promedio != null ? formatoNumero(p.anterior.promedio) + ' g' : 'sin datos'}`);
+  for (const x of areas.nutri?.macros ?? []) {
+    if (x.actual.promedio == null && x.anterior.promedio == null) continue;
+    const u = x.macro.unidad;
+    L.push(`- ${x.macro.nombre} (promedio/día): ${x.actual.promedio != null ? formatoNumero(x.actual.promedio) + ' ' + u : 'sin datos'} vs ${x.anterior.promedio != null ? formatoNumero(x.anterior.promedio) + ' ' + u : 'sin datos'}`);
   }
   const a = areas.nutri?.agua;
   if (a && (a.actual.promedio != null || a.anterior.promedio != null)) {
@@ -257,10 +271,12 @@ export function lineasDia({ fecha, datos = {} }) {
   }
   const cs = (comidas ?? []).filter((x) => x.eaten_on === fecha);
   if (cs.length) {
-    const con = cs.filter((c) => c.protein_g != null);
-    const total = con.reduce((a, c) => a + Number(c.protein_g), 0);
-    const av = aviso({ sinProteina: cs.length - con.length });
-    L.push(`- Nutri: ${pl(cs.length, 'comida', 'comidas')} · proteína ${con.length ? formatoNumero(r1(total)) + ' g' : 'sin cargar'}${av ? ' · ' + av : ''}`);
+    const tm = totalesMacros(cs);
+    const abrev = { kcal: (v) => `${formatoNumero(v)} kcal`, carbs: (v) => `C ${formatoNumero(v)} g`, protein: (v) => `P ${formatoNumero(v)} g`, fat: (v) => `G ${formatoNumero(v)} g` };
+    const partes = MACROS.filter((m) => tm[m.id].total != null).map((m) => abrev[m.id](tm[m.id].total));
+    // Solo se avisa de las macros con datos a medias (algunas comidas sí, otras no): la que nunca se carga no es un faltante.
+    const faltas = MACROS.filter((m) => tm[m.id].conDato > 0 && tm[m.id].sinDato > 0).map((m) => `${pl(tm[m.id].sinDato, 'comida', 'comidas')} sin dato de ${m.nombre.toLowerCase()}`);
+    L.push(`- Nutri: ${pl(cs.length, 'comida', 'comidas')} · ${partes.length ? partes.join(' · ') : 'sin macros cargadas'}${faltas.length ? ' · ' + faltas.join(' · ') : ''}`);
   }
   const ts = (tomas ?? []).filter((x) => x.drunk_on === fecha);
   if (ts.length) L.push(`- Agua: ${formatoMl(ts.reduce((a, t) => a + Number(t.ml), 0))} en ${pl(ts.length, 'toma', 'tomas')}`);
@@ -275,7 +291,7 @@ export function lineasDia({ fecha, datos = {} }) {
 // Lo de hoy y de la semana en curso, de un vistazo. Cada parte es null si no se pudo leer (nunca un 0 inventado).
 // «Entrenos» es la cantidad de entrenamientos REGISTRADOS esta semana; el hábito Entrenar (si existe) se muestra aparte.
 export function indicadoresPanel({ defs, logs, fecha, lunes, sesiones = null, comidas = null, tomas = null }) {
-  const out = { entrenos: null, proteina: null, agua: null };
+  const out = { entrenos: null, macros: null, agua: null };
   const logDe = (hab) => (hab.versiones.length ? logs.find((l) => l.log_date === fecha && hab.versiones.some((v) => v.id === l.habit_id)) ?? null : null);
   if (sesiones) {
     const ses = sesiones.filter((x) => x.performed_on >= lunes && x.performed_on <= fecha);
@@ -284,11 +300,13 @@ export function indicadoresPanel({ defs, logs, fecha, lunes, sesiones = null, co
     out.entrenos = { n: ses.length, habito: r && r.programados > 0 ? { programados: r.programados, cumplidos: r.cumplidos } : null };
   }
   if (comidas) {
-    const t = totalDia(comidas.filter((c) => c.eaten_on === fecha));
-    const hab = buscarHabitoProteina(defs, fecha);
-    const meta = hab.version ? Number(hab.version.target_value) : null;
-    const e = meta != null ? estadoProteina(logDe(hab), t) : { estado: null, cerrado: false };
-    out.proteina = { total: t.total, cantidad: t.cantidad, sinProteina: t.sinProteina, meta, falta: meta != null && t.total != null && t.total < meta ? r1(meta - t.total) : null, ...e };
+    const delDia = comidas.filter((c) => c.eaten_on === fecha);
+    const tm = totalesMacros(delDia);
+    out.macros = MACROS.map((m) => {
+      const hab = buscarHabitoMacro(defs, fecha, m.id);
+      const e = estadoMacro({ version: hab.version, total: tm[m.id].total, log: logDe(hab), notaAuto: NOTA_AUTO_MACRO[m.id], hayComidas: delDia.length > 0 });
+      return { id: m.id, nombre: m.nombre, unidad: m.unidad, version: hab.version, total: tm[m.id].total, conDato: tm[m.id].conDato, sinDato: tm[m.id].sinDato, cantidad: delDia.length, ...e };
+    });
   }
   if (tomas) {
     const t = totalAgua(tomas.filter((x) => x.drunk_on === fecha));
@@ -309,18 +327,26 @@ export function textoPanel(ind) {
     metricas.push({ valor: String(e.n), etiqueta: 'Entrenos registrados esta semana', clase: e.n ? 'ok' : '' });
     if (e.habito) notas.push(`Hábito Entrenar: ${e.habito.cumplidos} de ${e.habito.programados} días programados cumplidos.`);
   }
-  const p = ind.proteina;
-  if (!p) { metricas.push({ valor: '—', etiqueta: 'Proteína de hoy', clase: 'warn' }); faltan.push('comidas'); }
+  const macros = ind.macros;
+  if (!macros) { metricas.push({ valor: '—', etiqueta: 'Proteína de hoy', clase: 'warn' }); faltan.push('comidas'); }
   else {
-    metricas.push({ valor: p.total == null ? '—' : `${formatoNumero(p.total)} g`, etiqueta: `Proteína de hoy${p.meta != null ? ` · meta ${formatoNumero(p.meta)} g` : ''}`, clase: p.estado === 'cumplido' ? 'ok' : '' });
-    if (p.estado === 'cumplido') notas.push('Proteína: meta cumplida.');
-    else if (p.estado === 'incumplido') notas.push('Proteína: día cerrado como incumplido.');
-    else if (p.estado === 'excedido') notas.push('Proteína: pasó el máximo (excedido).');
-    else if (p.estado === 'sin_completar') notas.push(`Proteína: sin completar${p.falta != null ? ` · faltan ${formatoNumero(p.falta)} g` : ''}.`);
-    else if (p.estado === 'no_registrado') notas.push('Proteína: todavía no cargaste comidas hoy.');
-    else if (p.cantidad === 0) notas.push('Proteína: todavía no cargaste comidas hoy.');
-    const av = aviso(p);
-    if (av) notas.push(`${av.replace(/\.$/, '')} (el total solo suma lo cargado).`);
+    const p = macros.find((x) => x.id === 'protein');
+    metricas.push({
+      valor: p.total == null ? '—' : `${formatoNumero(p.total)} ${p.unidad}`,
+      etiqueta: `Proteína de hoy${p.version ? ` · objetivo ${textoObjetivo(p.version)}` : ''}`, clase: p.estado === 'cumplido' ? 'ok' : ''
+    });
+    if (p.cantidad === 0) notas.push('Todavía no cargaste comidas hoy.');
+    else {
+      for (const x of macros) {
+        if (x.version) {
+          const nota = x.estado === 'sin_dato' ? 'sin dato cargado hoy' : notaMacro({ version: x.version, total: x.total, estado: x.estado, cerrado: x.cerrado, unidad: x.unidad });
+          if (nota) notas.push(`${x.nombre}: ${nota}.`);
+        }
+        if ((x.version || x.id === 'protein') && x.conDato > 0 && x.sinDato > 0) {
+          notas.push(`${pl(x.sinDato, 'comida', 'comidas')} sin dato de ${x.nombre.toLowerCase()} (el total solo suma lo cargado).`);
+        }
+      }
+    }
   }
   const a = ind.agua;
   if (!a) { metricas.push({ valor: '—', etiqueta: 'Agua de hoy', clase: 'warn' }); faltan.push('agua'); }

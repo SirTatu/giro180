@@ -1,14 +1,8 @@
 // Pruebas de js/core/nutri.js (ejemplos inventados). Ejecutar con:  node --test tests/nutri.test.mjs
+// Los totales, objetivos, cierre y resúmenes de macros se prueban en alimentos.test.mjs y macros.test.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  validarProteina, totalDia, totalesPorDia, aviso, estadoProteina,
-  resumenProteina, buscarHabitoProteina, NOTA_AUTO, NOTA_CIERRE, estaCerrado
-} from '../js/core/nutri.js';
-
-const ver = (o = {}) => ({ id: 'h1', series_id: 's1', module: 'nutri', kind: 'quantity', name: 'Proteína', unit: 'g',
-  target_value: 120, scheduled_days: [1, 2, 3, 4, 5, 6, 7], valid_from: '2026-01-01', valid_to: null, locked: false, ...o });
-const comida = (f, p, id = Math.random()) => ({ id, eaten_on: f, meal_type: 'almuerzo', description: 'x', protein_g: p });
+import { validarProteina, TIPOS_COMIDA, nombreTipo, NOTA_CIERRE } from '../js/core/nutri.js';
 
 test('validarProteina: vacío es null (no cargada), nunca 0', () => {
   assert.deepEqual(validarProteina(''), { valor: null, error: null });
@@ -18,57 +12,9 @@ test('validarProteina: vacío es null (no cargada), nunca 0', () => {
   for (const mal of ['abc', '-5', '501', '32.55']) assert.ok(validarProteina(mal).error, mal);
 });
 
-test('totalDia: suma solo lo cargado; sin nada cargado es null, no 0', () => {
-  assert.deepEqual(totalDia([]), { total: null, cantidad: 0, conProteina: 0, sinProteina: 0 });
-  assert.equal(totalDia([comida('2026-03-02', null)]).total, null);
-  const t = totalDia([comida('2026-03-02', 30.5), comida('2026-03-02', null), comida('2026-03-02', 40)]);
-  assert.deepEqual(t, { total: 70.5, cantidad: 3, conProteina: 2, sinProteina: 1 });
-  assert.equal(totalDia([comida('x', 0.1), comida('x', 0.2)]).total, 0.3);   // sin errores de coma flotante
-  assert.equal(aviso(t), '1 comida quedó sin proteína cargada.');
-  assert.equal(aviso({ sinProteina: 2 }), '2 comidas quedaron sin proteína cargada.');
-  assert.equal(aviso({ sinProteina: 0 }), null);
-});
-
-test('estadoProteina: sin completar solo si hay comidas y ningún registro', () => {
-  const t0 = totalDia([]), t1 = totalDia([comida('d', 10)]);
-  assert.deepEqual(estadoProteina(null, t0), { estado: 'no_registrado', cerrado: false });
-  assert.deepEqual(estadoProteina(null, t1), { estado: 'sin_completar', cerrado: false });
-  assert.deepEqual(estadoProteina({ status: 'done', note: NOTA_AUTO }, t1), { estado: 'cumplido', cerrado: false });
-  assert.deepEqual(estadoProteina({ status: 'missed', note: NOTA_CIERRE }, t1), { estado: 'incumplido', cerrado: true });
-  assert.equal(estaCerrado({ note: null }), true);          // registro cargado a mano desde Central: no se toca
-});
-
-test('buscarHabitoProteina: módulo Nutri, cantidad, nombre con «prote»; el agua no se confunde', () => {
-  const agua = ver({ id: 'h2', series_id: 's2', name: 'Agua', unit: 'L', target_value: 3 });
-  const gym = ver({ id: 'h3', series_id: 's3', module: 'gym', name: 'Proteína rara' });
-  const r = buscarHabitoProteina([agua, gym, ver()], '2026-03-10');
-  assert.equal(r.version.id, 'h1');
-  // solo existe el agua: NO debe confundirse con la proteína
-  assert.equal(buscarHabitoProteina([agua], '2026-03-10').motivo, 'sin_habito');
-  assert.equal(buscarHabitoProteina([], '2026-03-10').motivo, 'sin_habito');
-});
-
-test('resumenProteina: promedio solo sobre días con dato; sin completar; faltantes', () => {
-  const versiones = [ver()];
-  const comidas = [comida('2026-03-02', 130), comida('2026-03-03', 80), comida('2026-03-03', null),
-    comida('2026-03-04', null), comida('2026-03-05', 100)];
-  const logs = [{ habit_id: 'h1', log_date: '2026-03-02', status: 'done', value: 130, note: NOTA_AUTO }];
-  const r = resumenProteina(versiones, logs, comidas, '2026-03-01', '2026-03-07');
-  assert.equal(r.estados.cumplidos, 1);
-  assert.equal(r.estados.incumplidos, 0);                    // lo que falta NUNCA es incumplimiento
-  assert.equal(r.conDato, 3);                                // el 4 no tiene proteína: no cuenta
-  assert.equal(r.promedio, 103.3);                           // (130+80+100)/3, no /4
-  assert.deepEqual(r.mejor, { fecha: '2026-03-02', valor: 130 });
-  assert.equal(r.sinCompletar, 3);                           // días 3, 4 y 5: con comidas y sin registro
-  assert.equal(r.diasConFaltantes, 2);
-  assert.equal(r.diasConComidas, 4);
-  const vacio = resumenProteina(versiones, [], [], '2026-03-01', '2026-03-07');
-  assert.equal(vacio.promedio, null);
-  assert.equal(vacio.mejor, null);
-});
-
-test('totalesPorDia agrupa por fecha', () => {
-  const m = totalesPorDia([comida('a', 10), comida('b', 5), comida('a', 20)]);
-  assert.equal(m.get('a').total, 30);
-  assert.equal(m.get('b').cantidad, 1);
+test('Tipos de comida y marca de cierre', () => {
+  assert.deepEqual(TIPOS_COMIDA.map((t) => t.id), ['desayuno', 'almuerzo', 'merienda', 'cena', 'colacion', 'otro']);
+  assert.equal(nombreTipo('colacion'), 'Colación');
+  assert.equal(nombreTipo('raro'), 'raro');                    // un tipo desconocido se muestra tal cual, sin romper
+  assert.equal(NOTA_CIERRE, 'cierre-dia');
 });

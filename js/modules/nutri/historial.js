@@ -1,20 +1,21 @@
-// Nutri → pestaña «Historial»: proteína y agua de los últimos 7 / 30 días y lista de días con datos.
+// Nutri → pestaña «Historial»: las 4 macros y el agua de los últimos 7 / 30 días, y la lista de días con datos.
+// Cada macro con objetivo muestra cuántos días cumpliste, no cumpliste, te excediste (aparte: no cuenta como no cumplido)
+// y cuántos quedaron sin cerrar. Promedios SOLO sobre días con dato. Cálculos en js/core/macros.js.
 import { h } from '../../core/dom.js';
 import { hoy, sumarDias, rango, etiquetaLarga } from '../../core/fechas.js';
-import { logsDeSerie } from '../../core/estados.js';
+import { ESTADO, estadoDia, logsDeSerie, textoObjetivo } from '../../core/estados.js';
 import { formatoNumero } from '../../core/entrenos.js';
-import { buscarHabitoProteina, resumenProteina, totalesPorDia, estadoProteina, aviso } from '../../core/nutri.js';
-import {
-  buscarHabitoAgua, resumenAgua, totalesPorDia as totalesAguaPorDia, estadoAgua, formatoMl
-} from '../../core/agua.js';
+import { MACROS, totalesMacrosPorDia } from '../../core/alimentos.js';
+import { buscarHabitoMacro, resumenMacroPeriodo } from '../../core/macros.js';
+import { buscarHabitoAgua, resumenAgua, totalesPorDia as totalesAguaPorDia, estadoAgua, formatoMl } from '../../core/agua.js';
 import * as D from './datos.js';
 import * as H from '../compartido/habitos.js';
 import { cajaError } from './ui.js';
 
-const ETIQUETA = { cumplido: 'Cumplido', incumplido: 'Incumplido', excedido: 'Excedido', sin_completar: 'Sin completar', no_registrado: 'No registrado' };
+const ETIQUETA = { cumplido: 'Cumplido', incumplido: 'Incumplido', excedido: 'Excedido', sin_completar: 'Sin completar', no_registrado: 'No registrado', sin_cerrar: 'Sin cerrar' };
 const PERIODOS = [{ dias: 7, nombre: 'Últimos 7 días' }, { dias: 30, nombre: 'Últimos 30 días' }];
-const g = (n) => `${formatoNumero(n)} g`;
-const clase = (e) => (e === 'sin_completar' ? 'no_registrado' : e);
+const clase = (e) => (e === 'sin_completar' || e === 'sin_cerrar' ? 'no_registrado' : e);
+const pl = (n, s, p) => `${n} ${n === 1 ? s : p}`;
 
 export function renderHistorial(cont, ctx = {}) {
   const raiz = h('div');
@@ -34,14 +35,24 @@ export function renderHistorial(cont, ctx = {}) {
     }
   }
 
-  function tarjetaResumen(titulo, estados, sinCompletar, lineas) {
-    return h('div', { class: 'card pad' }, h('strong', {}, titulo),
-      h('div', { class: 'metricas' },
-        h('div', { class: 'metrica ok' }, h('b', {}, String(estados.cumplidos)), h('span', {}, 'cumplidos')),
-        h('div', { class: 'metrica bad' }, h('b', {}, String(estados.incumplidos)), h('span', {}, 'incumplidos')),
-        h('div', { class: 'metrica' }, h('b', {}, String(sinCompletar)), h('span', {}, 'sin completar'))),
-      h('p', { class: 'fila-meta' }, estados.pct == null ? 'Cumplimiento: sin días cerrados o cumplidos todavía.' : `Cumplimiento: ${estados.pct} % de los días registrados.`),
-      ...lineas);
+  // Tarjeta de una macro: objetivo, promedio, días cumplidos / no cumplidos / excedidos / sin cerrar.
+  function tarjetaMacro(m, hab, r, nombrePeriodo) {
+    const u = m.unidad;
+    const e = r.estados;
+    const lineas = [h('p', { class: 'fila-meta' }, hab.version ? `Objetivo actual: ${textoObjetivo(hab.version)}` : 'Sin objetivo (configuralo en la pestaña Objetivos).')];
+    lineas.push(h('p', { class: 'fila-meta' }, r.conDato
+      ? `Promedio: ${formatoNumero(r.promedio)} ${u} por día con dato (${pl(r.conDato, 'día', 'días')}) · día más alto: ${formatoNumero(r.mayor.valor)} ${u} (${etiquetaLarga(r.mayor.fecha)}).`
+      : 'Todavía no hay datos cargados en este período.'));
+    if (e) {
+      lineas.push(h('div', { class: 'metricas' },
+        h('div', { class: 'metrica ok' }, h('b', {}, String(e.cumplidos)), h('span', {}, 'cumplidos')),
+        h('div', { class: 'metrica bad' }, h('b', {}, String(e.incumplidos)), h('span', {}, 'no cumplidos')),
+        h('div', { class: 'metrica' }, h('b', {}, String(e.excedidos)), h('span', {}, 'excedidos'))));
+      lineas.push(h('p', { class: 'fila-meta' }, `${pl(r.pendientes, 'día sin cerrar', 'días sin cerrar')}. ${e.pct == null ? 'Cumplimiento: todavía no hay días cumplidos ni no cumplidos.' : `Cumplimiento: ${e.pct} % de los días evaluados.`}`));
+      if (e.excedidos) lineas.push(h('p', { class: 'fila-meta' }, 'Los días excedidos se muestran aparte: no cuentan como no cumplidos.'));
+    }
+    if (r.diasParciales) lineas.push(h('p', { class: 'aviso' }, `${pl(r.diasParciales, 'día tiene', 'días tienen')} comidas sin dato de ${m.nombre.toLowerCase()}: el promedio solo suma lo cargado.`));
+    return h('div', { class: 'card pad' }, h('strong', {}, `${m.nombre} · ${nombrePeriodo}`), ...lineas);
   }
 
   function pintar(comidas, tomas, defs, logs, desde, hasta) {
@@ -50,51 +61,61 @@ export function renderHistorial(cont, ctx = {}) {
       class: 'btn btn-sm' + (p.dias === dias ? '' : ' btn-sec'), type: 'button', onClick: () => { dias = p.dias; cargar(); }
     }, p.nombre)));
 
-    const habP = buscarHabitoProteina(defs, hasta), vP = habP.versiones;
-    const habA = buscarHabitoAgua(defs, hasta), vA = habA.versiones;
-    const porDiaP = totalesPorDia(comidas), porDiaA = totalesAguaPorDia(tomas);
+    const porDiaM = totalesMacrosPorDia(comidas);
+    const porDiaA = totalesAguaPorDia(tomas);
+    const macros = MACROS.map((m) => {
+      const hab = buscarHabitoMacro(defs, hasta, m.id);
+      const r = resumenMacroPeriodo({ versiones: hab.versiones, logs, porDia: porDiaM, macroId: m.id, desde, hasta });
+      return { m, hab, r, propios: hab.versiones.length ? logsDeSerie(hab.versiones, logs) : new Map() };
+    });
+    const tarjetas = macros.filter((x) => x.hab.versiones.length || x.r.conDato).map((x) => tarjetaMacro(x.m, x.hab, x.r, nombrePeriodo));
+    const vacio = h('div', { class: 'card pad' }, h('strong', {}, 'Macros'), h('p', {}, 'Todavía no hay comidas con macros ni objetivos en este período. Definí tus objetivos en la pestaña Objetivos.'));
 
-    let tarjetaP;
-    if (!vP.length) tarjetaP = h('div', { class: 'card pad' }, h('strong', {}, 'Proteína'), h('p', {}, 'Todavía no hay un hábito de proteína (o hay más de uno ambiguo), así que no hay meta para comparar.'));
-    else {
-      const r = resumenProteina(vP, logs, comidas, desde, hasta);
-      tarjetaP = tarjetaResumen(`Proteína · ${nombrePeriodo}`, r.estados, r.sinCompletar, [
-        h('p', { class: 'fila-meta' }, r.conDato
-          ? `Promedio: ${g(r.promedio)} por día con proteína cargada (${r.conDato} ${r.conDato === 1 ? 'día' : 'días'}) · mejor día: ${g(r.mejor.valor)} (${etiquetaLarga(r.mejor.fecha)}).`
-          : 'Todavía no hay proteína cargada en este período.'),
-        r.diasConFaltantes ? h('p', { class: 'aviso' }, `${r.diasConFaltantes} ${r.diasConFaltantes === 1 ? 'día tiene' : 'días tienen'} comidas sin proteína cargada.`) : null]);
-    }
+    const habA = buscarHabitoAgua(defs, hasta), vA = habA.versiones;
     let tarjetaA;
     if (!vA.length) tarjetaA = h('div', { class: 'card pad' }, h('strong', {}, 'Agua'), h('p', {}, 'Todavía no hay un hábito de agua (o hay más de uno ambiguo), así que no hay meta para comparar.'));
     else {
       const r = resumenAgua(vA, logs, tomas, desde, hasta);
-      tarjetaA = tarjetaResumen(`Agua · ${nombrePeriodo}`, r.estados, r.sinCompletar, [
+      const e = r.estados;
+      tarjetaA = h('div', { class: 'card pad' }, h('strong', {}, `Agua · ${nombrePeriodo}`),
+        h('div', { class: 'metricas' },
+          h('div', { class: 'metrica ok' }, h('b', {}, String(e.cumplidos)), h('span', {}, 'cumplidos')),
+          h('div', { class: 'metrica bad' }, h('b', {}, String(e.incumplidos)), h('span', {}, 'incumplidos')),
+          h('div', { class: 'metrica' }, h('b', {}, String(r.sinCompletar)), h('span', {}, 'sin completar'))),
+        h('p', { class: 'fila-meta' }, e.pct == null ? 'Cumplimiento: sin días cerrados o cumplidos todavía.' : `Cumplimiento: ${e.pct} % de los días registrados.`),
         h('p', { class: 'fila-meta' }, r.conDato
-          ? `Promedio: ${formatoMl(r.promedioMl)} por día con tomas (${r.conDato} ${r.conDato === 1 ? 'día' : 'días'}) · mejor día: ${formatoMl(r.mejor.ml)} (${etiquetaLarga(r.mejor.fecha)}).`
-          : 'Todavía no hay agua cargada en este período.')]);
+          ? `Promedio: ${formatoMl(r.promedioMl)} por día con tomas (${pl(r.conDato, 'día', 'días')}) · mejor día: ${formatoMl(r.mejor.ml)} (${etiquetaLarga(r.mejor.fecha)}).`
+          : 'Todavía no hay agua cargada en este período.'));
     }
-
-    const propiosP = vP.length ? logsDeSerie(vP, logs) : new Map();
     const propiosA = vA.length ? logsDeSerie(vA, logs) : new Map();
-    const filas = rango(desde, hasta).reverse().filter((f) => porDiaP.has(f) || porDiaA.has(f)).map((f) => {
-      const tp = porDiaP.get(f), ta = porDiaA.get(f);
+
+    // Día por día: totales de macros, el estado de cada macro con objetivo y el agua.
+    const filas = rango(desde, hasta).reverse().filter((f) => porDiaM.has(f) || porDiaA.has(f)).map((f) => {
+      const tm = porDiaM.get(f), ta = porDiaA.get(f);
       const lineas = [];
-      if (tp) {
-        const e = estadoProteina(propiosP.get(f) ?? null, tp);
-        lineas.push(h('div', { class: 'fila-meta' }, `Proteína: ${tp.total == null ? 'sin cargar' : g(tp.total)} · ${tp.cantidad} ${tp.cantidad === 1 ? 'comida' : 'comidas'}${aviso(tp) ? ' · ' + aviso(tp) : ''}`,
-          vP.length ? h('span', { class: `badge ${clase(e.estado)}` }, ETIQUETA[e.estado]) : null));
+      if (tm) {
+        const abrev = { kcal: (v) => `${formatoNumero(v)} kcal`, carbs: (v) => `C ${formatoNumero(v)} g`, protein: (v) => `P ${formatoNumero(v)} g`, fat: (v) => `G ${formatoNumero(v)} g` };
+        const partes = MACROS.filter((m) => tm[m.id].total != null).map((m) => abrev[m.id](tm[m.id].total));
+        lineas.push(h('div', { class: 'fila-meta' }, `Nutri: ${pl(tm.cantidad, 'comida', 'comidas')} · ${partes.length ? partes.join(' · ') : 'sin macros cargadas'}`));
+        const estados = macros.filter((x) => x.hab.versiones.length && tm[x.m.id].total != null).map((x) => {
+          const d = estadoDia(x.hab.versiones, x.propios, f);
+          if (d.estado === ESTADO.SIN_ACTIVIDAD) return null;
+          const e = d.estado === ESTADO.NO_REGISTRADO ? 'sin_cerrar' : d.estado;
+          return h('span', { class: `badge ${clase(e)}` }, `${x.m.nombre}: ${ETIQUETA[e]}`);
+        }).filter(Boolean);
+        if (estados.length) lineas.push(h('div', { class: 'acciones' }, ...estados));
       }
       if (ta) {
         const e = estadoAgua(propiosA.get(f) ?? null, ta);
-        lineas.push(h('div', { class: 'fila-meta' }, `Agua: ${formatoMl(ta.ml)} · ${ta.cantidad} ${ta.cantidad === 1 ? 'toma' : 'tomas'}`,
+        lineas.push(h('div', { class: 'fila-meta' }, `Agua: ${formatoMl(ta.ml)} · ${pl(ta.cantidad, 'toma', 'tomas')}`,
           vA.length ? h('span', { class: `badge ${clase(e.estado)}` }, ETIQUETA[e.estado]) : null));
       }
       return h('div', { class: 'fila' }, h('div', { class: 'fila-top' }, h('div', { class: 'fila-nombre' }, etiquetaLarga(f))), ...lineas,
         h('div', { class: 'acciones' },
-          tp ? h('button', { class: 'link', type: 'button', onClick: () => ctx.irAHoy?.(f) }, 'Ver comidas') : null,
+          tm ? h('button', { class: 'link', type: 'button', onClick: () => ctx.irAHoy?.(f) }, 'Ver comidas') : null,
           ta ? h('button', { class: 'link', type: 'button', onClick: () => ctx.irAAgua?.(f) }, 'Ver agua') : null));
     });
-    raiz.replaceChildren(selector, tarjetaP, tarjetaA, h('h2', { class: 'grupo-titulo' }, 'Días con datos'),
+    raiz.replaceChildren(selector, ...(tarjetas.length ? tarjetas : [vacio]), tarjetaA, h('h2', { class: 'grupo-titulo' }, 'Días con datos'),
       ...(filas.length ? filas : [h('p', { class: 'fila-meta' }, 'No hay comidas ni agua cargadas en este período.')]));
   }
 

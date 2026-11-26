@@ -64,11 +64,12 @@ test('Pasos: promedio solo sobre días con dato', () => {
 });
 
 test('Nutri: promedios solo sobre días con dato; avisa días con comidas sin proteína', () => {
-  const p = areas.nutri.proteina;
+  const p = areas.nutri.macros.find((x) => x.macro.id === 'protein');
   assert.equal(p.actual.promedio, 80);                         // (60 + 100) / 2; la comida sin proteína no suma ni cuenta como 0
-  assert.equal(p.actual.diasConFaltantes, 1);
+  assert.equal(p.actual.diasParciales, 1);
   assert.equal(p.anterior.promedio, 90);
-  assert.equal(p.meta, 120);
+  assert.equal(p.objetivo, '120 g o más');
+  for (const id of ['kcal', 'carbs', 'fat']) assert.equal(areas.nutri.macros.find((x) => x.macro.id === id).actual.promedio, null);   // sin datos: null, no 0
   const a = areas.nutri.agua;
   assert.equal(a.actual.promedio, 2500);
   assert.equal(a.anterior.promedio, 1500);
@@ -124,7 +125,8 @@ test('Nota para Gym y para Nutri con datos reales; las demás no cambian', () =>
   assert.match(gym, /Peso: último 78,4 kg \(12\/11\) · promedio 7 días 78,5 kg \(−0,4 kg vs 7 días previos\)/);
   assert.match(gym, /Cintura: último 90,5 cm/);
   const nutri = r('nutri');
-  assert.match(nutri, /Proteína: promedio 80 g\/día sobre 2 días con dato · meta 120 g · mejor día 100 g \(10\/11\) · período anterior: 90 g\/día · 1 día con comidas sin proteína cargada/);
+  assert.match(nutri, /Proteínas: promedio 80 g\/día sobre 2 días con dato · objetivo 120 g o más · 0 cumplidos, 0 no cumplidos, 0 excedidos, 2 días sin cerrar · día más alto 100 g \(10\/11\) · período anterior: 90 g\/día · 1 día con comidas sin dato de proteínas/);
+  assert.ok(!/Calorías:|Carbohidratos:|Grasas:/.test(nutri), 'las macros sin objetivo y sin datos no aparecen');
   assert.match(nutri, /Agua: promedio 2,5 L\/día sobre 2 días con tomas · meta 3 L/);
   assert.match(nutri, /Peso: último 78,4 kg/);
   assert.match(nutri, /no fue registrado o no se pudo leer/);
@@ -136,7 +138,7 @@ test('Nota para Gym y para Nutri con datos reales; las demás no cambian', () =>
 test('Indicadores por área: Gym lleva cuerpo, Nutri no lo repite', () => {
   const t = armarInformes({ sem, series, logs, fecha: HOY, especialista: 'central', areas, datosAreas: datos }).areas;
   assert.equal((t.match(/- Peso:/g) ?? []).length, 1);
-  assert.match(t, /- Proteína: promedio 80/);
+  assert.match(t, /- Proteínas: promedio 80/);
   assert.match(t, /- Entrenamientos: 2 sesiones/);
 });
 
@@ -144,14 +146,14 @@ test('Comparación semanal con métricas reales', () => {
   const L = lineasComparacion(areas);
   assert.ok(L.includes('- Gym: 2 sesiones vs 2 sesiones · volumen 3.690 kg vs 2.250 kg'));
   assert.ok(L.includes('- Pasos (promedio/día): 8.000 vs 5.000'));
-  assert.ok(L.includes('- Proteína (promedio/día): 80 g vs 90 g'));
+  assert.ok(L.includes('- Proteínas (promedio/día): 80 g vs 90 g'));
   assert.ok(L.includes('- Agua (promedio/día): 2,5 L vs 1,5 L'));
   assert.ok(L.includes('- Peso (promedio 7 días): 78,5 kg vs 78,9 kg'));
 });
 
 test('Registro diario: solo lo cargado ese día', () => {
   const d = lineasDia({ fecha: '2026-11-09', datos });
-  assert.deepEqual(d, ['- Nutri: 2 comidas · proteína 60 g · 1 comida quedó sin proteína cargada.', '- Agua: 2 L en 1 toma']);
+  assert.deepEqual(d, ['- Nutri: 2 comidas · P 60 g · 1 comida sin dato de proteínas', '- Agua: 2 L en 1 toma']);
   const d2 = lineasDia({ fecha: '2026-11-11', datos });
   assert.deepEqual(d2, ['- Gym: entrenó Piernas · 3 series · volumen 1.440 kg']);
   assert.deepEqual(lineasDia({ fecha: '2026-11-08', datos }), []);                   // sin dato ese día: no se dice nada
@@ -170,7 +172,7 @@ test('Datos que no se pudieron leer: se dice, no se inventa 0', () => {
   assert.match(g, /No se pudieron leer: entrenamientos de Gym, peso y cintura/);
   assert.ok(!/Entrenamientos: /.test(g) && !/sesiones/.test(g));
   assert.match(lineasArea(ar, 'nutri').join('\n'), /No se pudieron leer: agua de Nutri/);
-  assert.match(lineasArea(ar, 'nutri').join('\n'), /Proteína: promedio 80/);          // lo que sí se leyó, se usa
+  assert.match(lineasArea(ar, 'nutri').join('\n'), /Proteínas: promedio 80/);         // lo que sí se leyó, se usa
 });
 
 test('Sin datos cargados: dice que faltan, no 0', () => {
@@ -178,7 +180,7 @@ test('Sin datos cargados: dice que faltan, no 0', () => {
   const g = lineasArea(vacio, 'gym').join('\n');
   assert.match(g, /sin sesiones registradas en el período \(si no las cargaste, es dato faltante, no incumplimiento\)/);
   assert.match(g, /Peso: sin mediciones registradas/);
-  assert.match(lineasArea(vacio, 'nutri').join('\n'), /Proteína: sin proteína cargada en el período/);
+  assert.match(lineasArea(vacio, 'nutri').join('\n'), /Proteínas: sin datos cargados en el período · objetivo 120 g o más/);
   assert.match(lineasArea(vacio, 'nutri').join('\n'), /Agua: sin tomas registradas en el período/);
   assert.equal(hayDatosArea(vacio, 'gym'), false);
   assert.equal(hayDatosArea(vacio, 'nutri'), false);
@@ -212,16 +214,16 @@ test('Panel: entrenos de la semana en curso (no los de semanas anteriores) y há
 
 test('Panel: proteína y agua de HOY contra la meta; sin completar no es incumplido', () => {
   const p = panel();
-  assert.equal(p.proteina.total, 70);                              // solo la comida de hoy
-  assert.equal(p.proteina.falta, 50);
-  assert.equal(p.proteina.estado, 'sin_completar');
+  const prot = p.macros.find((x) => x.id === 'protein');
+  assert.equal(prot.total, 70);                                    // solo la comida de hoy
+  assert.equal(prot.estado, 'sin_completar');
   assert.equal(p.agua.ml, 1200);
   assert.equal(p.agua.falta, 1800);
   assert.equal(p.agua.estado, 'sin_completar');
   const t = textoPanel(p);
-  assert.deepEqual(t.metricas[1], { valor: '70 g', etiqueta: 'Proteína de hoy · meta 120 g', clase: '' });
+  assert.deepEqual(t.metricas[1], { valor: '70 g', etiqueta: 'Proteína de hoy · objetivo 120 g o más', clase: '' });
   assert.deepEqual(t.metricas[2], { valor: '1,2 L', etiqueta: 'Agua de hoy · meta 3 L', clase: '' });
-  assert.ok(t.notas.includes('Proteína: sin completar · faltan 50 g.'));
+  assert.ok(t.notas.includes('Proteínas: faltan 50 g para el mínimo.'));
   assert.ok(t.notas.includes('Agua: sin completar · faltan 1,8 L.'));
 });
 
@@ -230,7 +232,7 @@ test('Panel: cumplido (automático) e incumplido (cierre manual) se muestran seg
   lg.find((l) => l.habit_id === 'pr' && l.log_date === hoyP).note = 'auto-proteina';
   lg.find((l) => l.habit_id === 'ag' && l.log_date === hoyP).note = 'cierre-dia';
   const t = textoPanel(panel({ logs: lg }));
-  assert.ok(t.notas.includes('Proteína: meta cumplida.'));
+  assert.ok(t.notas.includes('Proteínas: objetivo cumplido.'));
   assert.ok(t.notas.includes('Agua: día cerrado como incumplido.'));
   assert.equal(t.metricas[1].clase, 'ok');
 });
@@ -239,11 +241,11 @@ test('Panel: hoy sin nada cargado dice «—», no 0; avisa comidas sin proteín
   const t = textoPanel(panel({ comidas: [], tomas: [] }));
   assert.equal(t.metricas[1].valor, '—');
   assert.equal(t.metricas[2].valor, '—');
-  assert.ok(t.notas.includes('Proteína: todavía no cargaste comidas hoy.'));
+  assert.ok(t.notas.includes('Todavía no cargaste comidas hoy.'));
   assert.ok(t.notas.includes('Agua: todavía no cargaste tomas hoy.'));
   const t2 = textoPanel(panel({ comidas: [comida(hoyP, 40), comida(hoyP, null)] }));
   assert.equal(t2.metricas[1].valor, '40 g');
-  assert.ok(t2.notas.some((n) => /1 comida quedó sin proteína cargada \(el total solo suma lo cargado\)\./.test(n)));
+  assert.ok(t2.notas.some((n) => /1 comida sin dato de proteínas \(el total solo suma lo cargado\)\./.test(n)));
 });
 
 test('Panel: lo que no se pudo leer se avisa y no se inventa; el resto sigue', () => {
@@ -261,6 +263,6 @@ test('Panel: sin hábitos de meta muestra el total igual; sin sesiones registra 
   assert.equal(t.metricas[1].etiqueta, 'Proteína de hoy');
   assert.equal(t.metricas[1].valor, '55 g');
   assert.equal(t.metricas[2].valor, '500 ml');
-  assert.equal(p.proteina.estado, null);
-  assert.equal(p.proteina.falta, null);
+  assert.equal(p.macros.find((x) => x.id === 'protein').estado, null);        // sin objetivo: se muestra el total, no un estado
+  assert.equal(p.macros.find((x) => x.id === 'protein').version, null);
 });

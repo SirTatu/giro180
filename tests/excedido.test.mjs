@@ -116,7 +116,7 @@ test('Sin ningún excedido, los resúmenes son los de siempre (más el campo exc
 
 // ---------- informes, Nutri y Panel con días excedidos ----------
 import { calcularSemana, informeGeneralMd, armarInformes, aIndicadores, filasDelDia, registroDiarioMd, MAX_LINEAS_GENERAL } from '../js/core/informes.js';
-import { estadoProteina } from '../js/core/nutri.js';
+import { estadoMacro } from '../js/core/macros.js';
 import { estadoAgua } from '../js/core/agua.js';
 import { textoPanel } from '../js/core/areas.js';
 
@@ -177,10 +177,14 @@ test('La foto semanal (aIndicadores) guarda los excedidos', () => {
 });
 
 test('Nutri y Panel: un registro «exceeded» se lee como excedido, no como incumplido', () => {
-  const t = { cantidad: 2, total: 3000 };
-  assert.deepEqual(estadoProteina({ status: 'exceeded', note: 'cierre-dia' }, t), { estado: 'excedido', cerrado: true });
-  assert.deepEqual(estadoProteina({ status: 'missed', note: 'cierre-dia' }, t), { estado: 'incumplido', cerrado: true });
+  const v = def({ id: 'p', series_id: 'sp', name: 'Proteínas', unit: 'g', target_value: 120, target_max: 160 });      // entre 120 y 160 g
+  const e = (log) => estadoMacro({ version: v, total: 200, log, notaAuto: 'auto-proteina', hayComidas: true });
+  assert.deepEqual(e({ status: 'exceeded', note: 'cierre-dia' }), { estado: 'excedido', cerrado: true });
+  assert.deepEqual(e({ status: 'missed', note: 'cierre-dia' }), { estado: 'incumplido', cerrado: true });
   assert.deepEqual(estadoAgua({ status: 'exceeded', note: 'auto-agua' }, { cantidad: 1, ml: 9000 }), { estado: 'excedido', cerrado: false });
-  const txt = textoPanel({ entrenos: null, proteina: { total: 200, cantidad: 3, sinProteina: 0, meta: 120, falta: null, estado: 'excedido', cerrado: true }, agua: null });
-  assert.ok(txt.notas.includes('Proteína: pasó el máximo (excedido).'));
+  const txt = textoPanel({ entrenos: null, agua: null, macros: [
+    { id: 'protein', nombre: 'Proteínas', unidad: 'g', version: v, total: 200, conDato: 3, sinDato: 0, cantidad: 3, estado: 'excedido', cerrado: true }
+  ] });
+  assert.ok(txt.notas.includes('Proteínas: te pasaste por 40 g · día cerrado.'));
+  assert.deepEqual(txt.metricas[1], { valor: '200 g', etiqueta: 'Proteína de hoy · objetivo entre 120 y 160 g', clase: '' });   // excedido no se pinta de «cumplido»
 });

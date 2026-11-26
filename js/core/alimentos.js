@@ -201,6 +201,16 @@ export function totalesMacros(comidas) {
   return out;
 }
 
+// Totales de cada macro por día: Map fecha -> totalesMacros(comidas de ese día). Sirve para el Historial y los Informes.
+export function totalesMacrosPorDia(comidas) {
+  const porDia = new Map();
+  for (const c of comidas) {
+    if (!porDia.has(c.eaten_on)) porDia.set(c.eaten_on, []);
+    porDia.get(c.eaten_on).push(c);
+  }
+  return new Map([...porDia].map(([f, lista]) => [f, totalesMacros(lista)]));
+}
+
 // «198 kcal · C 0 · P 37,2 · G 4,3»: solo lo que tiene dato.
 export function textoMacrosComida(c) {
   const partes = [];

@@ -226,3 +226,48 @@ test('logsParaReabrir: solo los registros cerrados (no los automáticos)', () =>
   ];
   assert.deepEqual(logsParaReabrir(filas).map((l) => l.habit_id), ['p']);     // grasas no tiene objetivo vigente: no se toca
 });
+
+// ---------- resumen de un período por macro (Historial e Informes) ----------
+import { resumenMacroPeriodo } from '../js/core/macros.js';
+import { totalesMacrosPorDia } from '../js/core/alimentos.js';
+
+const com = (eaten_on, kcal, carbs, protein, fat) => ({ eaten_on, meal_type: 'almuerzo', description: 'x', calories_kcal: kcal, carbs_g: carbs, protein_g: protein, fat_g: fat });
+
+test('totalesMacrosPorDia agrupa por fecha y respeta lo que falta', () => {
+  const m = totalesMacrosPorDia([com('a', 500, null, 30, 10), com('b', 100, 5, 5, 1), com('a', null, null, 20, 2)]);
+  assert.deepEqual([...m.keys()], ['a', 'b']);
+  assert.deepEqual(m.get('a').kcal, { total: 500, conDato: 1, sinDato: 1 });
+  assert.deepEqual(m.get('a').protein, { total: 50, conDato: 2, sinDato: 0 });
+  assert.deepEqual(m.get('a').carbs, { total: null, conDato: 0, sinDato: 2 });
+  assert.equal(m.get('b').cantidad, 1);
+});
+
+test('resumenMacroPeriodo: promedio solo sobre días con dato; parciales; pendientes; estados', () => {
+  const versiones = [PROT];
+  const porDia = totalesMacrosPorDia([com('2026-03-02', null, null, 130, null), com('2026-03-03', null, null, 80, null), com('2026-03-03', null, null, null, null),
+    com('2026-03-04', null, null, null, null), com('2026-03-05', null, null, 100, null)]);
+  const logs = [{ habit_id: 'p', log_date: '2026-03-02', status: 'done', value: 130, note: 'auto-proteina' }];
+  const r = resumenMacroPeriodo({ versiones, logs, porDia, macroId: 'protein', desde: '2026-03-01', hasta: '2026-03-07' });
+  assert.equal(r.conDato, 3);                                   // el día 4 no tiene proteína cargada: no cuenta
+  assert.equal(r.promedio, 103.3);                              // (130 + 80 + 100) / 3, no / 4
+  assert.deepEqual(r.mayor, { fecha: '2026-03-02', valor: 130 });
+  assert.equal(r.diasParciales, 1);                             // día 3: una comida con proteína y otra sin
+  assert.equal(r.pendientes, 2);                                // días 3 y 5: con dato y sin ningún registro
+  assert.deepEqual([r.estados.cumplidos, r.estados.incumplidos, r.estados.excedidos], [1, 0, 0]);
+  // otra macro sin datos: null, no 0
+  const k = resumenMacroPeriodo({ versiones: [], logs, porDia, macroId: 'kcal', desde: '2026-03-01', hasta: '2026-03-07' });
+  assert.deepEqual([k.conDato, k.promedio, k.mayor, k.estados, k.pendientes], [0, null, null, null, 0]);
+});
+
+test('resumenMacroPeriodo: los días excedidos no mueven el porcentaje', () => {
+  const porDia = totalesMacrosPorDia([com('2026-03-02', 1800), com('2026-03-03', 900), com('2026-03-04', 2400)]);
+  const logs = [
+    { habit_id: 'c', log_date: '2026-03-02', status: 'done', value: 1800, note: 'cierre-dia' },
+    { habit_id: 'c', log_date: '2026-03-03', status: 'missed', value: 900, note: 'cierre-dia' },
+    { habit_id: 'c', log_date: '2026-03-04', status: 'exceeded', value: 2400, note: 'cierre-dia' }
+  ];
+  const r = resumenMacroPeriodo({ versiones: [ENTRE], logs, porDia, macroId: 'kcal', desde: '2026-03-02', hasta: '2026-03-05' });
+  assert.deepEqual([r.estados.cumplidos, r.estados.incumplidos, r.estados.excedidos, r.estados.pct], [1, 1, 1, 50]);
+  assert.equal(r.pendientes, 0);
+  assert.equal(r.promedio, 1700);                               // (1800 + 900 + 2400) / 3
+});

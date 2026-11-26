@@ -10,8 +10,8 @@
 //   · «Como máximo»: NO se marca cumplido durante el día (con el primer bocado ya estarías «dentro»): lo decide el cierre.
 //     Pasarse del máximo sí marca excedido enseguida.
 //   · «Cerrar el día» es siempre a mano, y un solo botón cierra todas las macros con objetivo y datos.
-import { evaluar, tipoObjetivo } from './estados.js';
-import { sumarDias } from './fechas.js';
+import { evaluar, tipoObjetivo, resumenSerie, logsDeSerie } from './estados.js';
+import { sumarDias, rango } from './fechas.js';
 import { parsearNumero, buscarHabitoDeModulo, formatoNumero } from './entrenos.js';
 import { MACROS } from './alimentos.js';
 import { NOTA_CIERRE } from './nutri.js';
@@ -219,3 +219,23 @@ export const textoResumenCierre = ({ cumplidas, incumplidas, excedidas }) => {
 // Registros de macros que cuentan como cerrados (los que se borran al reabrir el día).
 export const logsParaReabrir = (filas) =>
   filas.filter((f) => f.version && estaCerradoMacro(f.log, NOTA_AUTO_MACRO[f.macroId])).map((f) => f.log);
+
+// ---------- resumen de un período (Historial e Informes) ----------
+// porDia: Map fecha -> totalesMacros (ver totalesMacrosPorDia). Promedio SOLO sobre días con dato (un día sin dato no cuenta como 0).
+// estados: cumplidos / incumplidos / excedidos del hábito de esa macro (null si no tiene objetivo en el período).
+// pendientes: días con dato de esa macro y sin ningún registro (todavía sin cerrar, o «como máximo» sin cerrar).
+export function resumenMacroPeriodo({ versiones, logs, porDia, macroId, desde, hasta }) {
+  const tiene = versiones && versiones.length > 0;
+  const estados = tiene ? resumenSerie(versiones, logs, desde, hasta) : null;
+  const propios = tiene ? logsDeSerie(versiones, logs) : null;
+  let n = 0, suma = 0, mayor = null, parciales = 0, pendientes = 0;
+  for (const f of rango(desde, hasta)) {
+    const t = porDia.get(f)?.[macroId];
+    if (!t || t.total == null) continue;
+    n++; suma += t.total;
+    if (!mayor || t.total > mayor.valor) mayor = { fecha: f, valor: t.total };
+    if (t.sinDato > 0) parciales++;
+    if (propios && !propios.has(f)) pendientes++;
+  }
+  return { estados, conDato: n, promedio: n ? r1(suma / n) : null, mayor, diasParciales: parciales, pendientes };
+}
