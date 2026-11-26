@@ -30,8 +30,8 @@
   - [x] 3-6a Migración 007 + pestaña Alimentos con porciones (v0.16.0; confirmado por el usuario)
   - [x] 3-6b Registrar comidas eligiendo un alimento y gramos o porciones; ver calorías, carbos, proteínas y grasas del día (v0.17.0; confirmado por el usuario)
   - [ ] 3-6c Objetivos por macro con rango y estado «excedido» (se divide en tres)
-    - [ ] 3-6c1 Migración 009 (máximo en el objetivo y estado «excedido») + `estados.js` + pantallas de Central e Informes (v0.18.0, entregado; falta que el usuario lo pruebe)
-    - [ ] 3-6c2 Pestaña Nutri → Objetivos (por macro: «al menos» / «como máximo» / «entre X e Y», versionado) + Hoy con el estado de cada macro, cumplido y excedido automáticos y un solo botón «Cerrar el día»
+    - [x] 3-6c1 Migración 009 (máximo en el objetivo y estado «excedido») + `estados.js` + pantallas de Central e Informes (v0.18.0; confirmado por el usuario)
+    - [ ] 3-6c2 Pestaña Nutri → Objetivos (por macro: «al menos» / «como máximo» / «entre X e Y», versionado) + Hoy con el estado de cada macro, cumplido y excedido automáticos y un solo botón «Cerrar el día» (v0.19.0, entregado; falta que el usuario lo pruebe)
     - [ ] 3-6c3 Historial, Informes (informe y notas) y Panel con las 4 macros y sus excedidos
 - Decisiones tomadas / abiertas de la etapa:
   - 3-6: decidido por el usuario: alimentos por 100 g (o 100 ml) + porciones opcionales; los objetivos se configuran en Nutri → Objetivos (los hábitos quedan por debajo, versionados); un día «excedido» NO cuenta como no cumplido en los porcentajes, solo se marca. Pendiente de resolver en 3-6c: eso exige un estado nuevo («excedido») en `habit_logs` y en `estados.js`, con su migración; hay que confirmar con el usuario el detalle antes de tocar nada.
@@ -42,6 +42,8 @@
   - Borrar un entrenamiento NO desmarca el hábito «Entrenar» de ese día (se corrige en Hoy). Evaluar si conviene automatizarlo.
 
 ## Ideas / pendientes
+- Objetivos de macros: cada macro tiene sus días programados fijos (todos los días); no hay objetivos distintos por día de la semana
+- Agua: su objetivo sigue en Central → Hábitos y su cierre en la pestaña Agua (se podría unificar con el de las macros)
 - Hoy: al editar una comida de alimento solo se cambia la cantidad; cambiar de alimento exige borrar y cargar de nuevo (se podría permitir)
 - Hoy: recordar los alimentos usados más seguido o los últimos (atajos)
 - Alimentos: importar una lista pegando texto (como el importador de rutinas); no precargar nada en el código (el repo es público)

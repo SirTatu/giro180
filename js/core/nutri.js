@@ -1,8 +1,8 @@
 // Lógica pura de NUTRI (hito 3-4a): comidas, proteína del día, cierre del día. Sin pantalla ni base de datos.
-// Pruebas en tests/nutri.test.mjs. Los CUATRO ESTADOS los decide siempre estados.js: acá solo se decide
-// cuándo escribir un registro (cumplido automático al llegar a la meta, cierre manual) y se arman números.
+// Pruebas en tests/nutri.test.mjs. Los estados los decide siempre estados.js. El cumplido/excedido automático y el cierre
+// del día de las macros viven en macros.js; acá quedan las comidas, los totales de proteína y el resumen de un período.
 // «Sin completar» NO es un estado nuevo: es un día con comidas y sin registro (para estados.js sigue siendo «no registrado»).
-import { resumenSerie, logsDeSerie, evaluar } from './estados.js';
+import { resumenSerie, logsDeSerie } from './estados.js';
 import { rango } from './fechas.js';
 import { parsearNumero, buscarHabitoDeModulo } from './entrenos.js';
 
@@ -60,33 +60,6 @@ export const estaCerrado = (log, notaAuto = NOTA_AUTO) => !!log && log.note !== 
 export function estadoProteina(log, t) {
   if (log) return { estado: log.status === 'done' ? 'cumplido' : log.status === 'exceeded' ? 'excedido' : 'incumplido', cerrado: estaCerrado(log) };
   return { estado: t.cantidad > 0 ? 'sin_completar' : 'no_registrado', cerrado: false };
-}
-
-// Después de cambiar comidas: ¿hay que escribir o quitar el registro automático?
-// Solo el cumplido automático es automático; nunca se marca «incumplido» solo. Un registro de cierre no se toca.
-export function decidirSincronizacion({ version, total, log, notaAuto = NOTA_AUTO }) {
-  if (!version) return { accion: 'ninguna' };
-  if (estaCerrado(log, notaAuto)) return { accion: 'ninguna' };
-  if (total != null && total >= Number(version.target_value)) {
-    if (log && log.status === 'done' && Number(log.value) === total && log.note === notaAuto) return { accion: 'ninguna' };
-    return { accion: 'guardar', status: 'done', value: total, note: notaAuto };
-  }
-  return log ? { accion: 'quitar' } : { accion: 'ninguna' };
-}
-
-// «Cerrar el día»: solo a mano. Sin comidas o sin ninguna proteína cargada no se puede cerrar (faltaría el dato, no la meta).
-// Con comidas sin proteína, pide confirmación. Los días futuros no se cierran.
-export function decidirCierre({ version, totales, fecha, hoyFecha }) {
-  if (!version) return { error: 'El hábito de proteína no estaba vigente ese día.' };
-  if (fecha > hoyFecha) return { error: 'No se puede cerrar un día que todavía no llegó.' };
-  if (totales.cantidad === 0) return { error: 'No hay comidas cargadas: el día queda «no registrado».' };
-  if (totales.total == null) return { error: 'Ninguna comida tiene proteína cargada. Cargala antes de cerrar para no marcar un incumplimiento falso.' };
-  const status = evaluar(version, totales.total);
-  const a = aviso(totales);
-  return {
-    error: null, status, value: totales.total, note: NOTA_CIERRE,
-    confirmar: a ? `${a} El total (${totales.total} g) solo suma lo cargado. ¿Cerrar el día como ${status === 'done' ? 'cumplido' : 'incumplido'} igual?` : null
-  };
 }
 
 // ---------- resumen de un período ----------

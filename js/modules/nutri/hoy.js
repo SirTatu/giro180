@@ -1,22 +1,30 @@
-// Nutri → pestaña «Hoy»: comidas del día (con alimento o a mano), las 4 macros, proteína contra la meta y cierre del día.
-// Las decisiones (cumplido automático, cierre, avisos) viven en js/core/nutri.js; los estados en estados.js.
+// Nutri → pestaña «Hoy»: comidas del día (con alimento o a mano), las 4 macros contra su objetivo y cierre del día.
+// Las decisiones (estado de cada macro, cumplido/excedido automáticos, cierre) viven en js/core/macros.js; los estados en estados.js.
 import { h } from '../../core/dom.js';
 import { hoy, sumarDias, etiquetaLarga } from '../../core/fechas.js';
 import { traducirError } from '../../core/gym.js';
 import { formatoNumero } from '../../core/entrenos.js';
-import {
-  TIPOS_COMIDA, nombreTipo, totalDia, aviso, estadoProteina,
-  decidirSincronizacion, decidirCierre, buscarHabitoProteina, NOTA_AUTO
-} from '../../core/nutri.js';
+import { textoObjetivo } from '../../core/estados.js';
+import { TIPOS_COMIDA, nombreTipo } from '../../core/nutri.js';
 import {
   MACROS, validarComidaManual, opcionesCantidad, calcularCantidad, comidaDeAlimento, reescalarComida,
   totalesMacros, textoMacrosComida, avisosMacros, filtrarAlimentos
 } from '../../core/alimentos.js';
+import {
+  NOTA_AUTO_MACRO, buscarHabitoMacro, decidirSincronizacionMacro, decidirCierreMacros, estadoMacro, notaMacro,
+  logsParaReabrir, textoResumenCierre
+} from '../../core/macros.js';
 import * as D from './datos.js';
 import * as H from '../compartido/habitos.js';
 import { cajaError } from './ui.js';
 
-const ETIQUETA = { cumplido: 'Cumplido', incumplido: 'Incumplido', excedido: 'Excedido', sin_completar: 'Sin completar', no_registrado: 'No registrado' };
+const ETIQUETA = {
+  cumplido: 'Cumplido', incumplido: 'Incumplido', excedido: 'Excedido', sin_completar: 'Sin completar', no_registrado: 'No registrado',
+  sin_dato: 'Sin dato', dentro_del_limite: 'Dentro del límite', dentro_del_rango: 'Dentro del rango'
+};
+// Colores: los estados ya registrados usan su propia clase; lo que todavía no se registró va en tono neutro.
+const CLASE = { cumplido: 'cumplido', incumplido: 'incumplido', excedido: 'excedido', sin_completar: 'no_registrado', no_registrado: 'no_registrado', sin_dato: 'no_registrado', dentro_del_limite: '', dentro_del_rango: '' };
+
 const g = (n) => `${formatoNumero(n)} g`;
 
 export function renderHoy(cont, ctx = {}) {
@@ -25,7 +33,7 @@ export function renderHoy(cont, ctx = {}) {
   const raiz = h('div');
   let token = 0;
   let fecha = ctx.fechaInicial || hoy();
-  let datos = null;                                       // { comidas, hab, log, alimentos, porciones }
+  let datos = null;                                       // { comidas, macros: { id: { hab, log } }, alimentos, porciones }
   let editando = null;                                    // comida en edición
   let modo = null;                                        // 'alimento' | 'manual' (se recuerda entre cargas)
   let ultimoTipo = 'almuerzo';
@@ -33,9 +41,13 @@ export function renderHoy(cont, ctx = {}) {
 
   const leerNucleo = async (f) => {
     const [comidas, defs, logs] = await Promise.all([D.comidasDelDia(f), H.listarDefiniciones(), H.logsEntre(f, f)]);
-    const hab = buscarHabitoProteina(defs, f);
-    const log = hab.versiones.length ? logs.find((l) => hab.versiones.some((v) => v.id === l.habit_id)) ?? null : null;
-    return { comidas, hab, log };
+    const macros = {};
+    for (const m of MACROS) {
+      const hab = buscarHabitoMacro(defs, f, m.id);
+      const log = hab.versiones.length ? logs.find((l) => hab.versiones.some((v) => v.id === l.habit_id)) ?? null : null;
+      macros[m.id] = { hab, log };
+    }
+    return { comidas, macros };
   };
   // Los alimentos son OPCIONALES: si no se pueden leer, se puede cargar a mano y el resto funciona.
   const leer = async (f) => {
@@ -45,15 +57,34 @@ export function renderHoy(cont, ctx = {}) {
     return { ...nucleo, alimentos: rAl.status === 'fulfilled' ? rAl.value : null, porciones: rPo.status === 'fulfilled' ? rPo.value : [] };
   };
 
-  // Después de cambiar comidas: marca «cumplido» solo si llegó a la meta (o quita ese marcado si dejó de llegar).
+  // Después de cambiar comidas: marca «cumplido» o «excedido» solo cuando corresponde (y lo quita si dejó de corresponder).
+  // Nunca marca «incumplido» solo. Devuelve qué cambió, para avisarlo.
   async function sincronizar(f) {
     const d = await leerNucleo(f);
-    const t = totalDia(d.comidas);
-    const dec = decidirSincronizacion({ version: d.hab.version, total: t.total, log: d.log });
-    if (dec.accion === 'guardar') await H.guardarLog({ habit_id: d.hab.version.id, log_date: f, status: dec.status, value: dec.value, note: dec.note });
-    else if (dec.accion === 'quitar') await H.borrarLog(d.log.id);
-    return dec.accion;
+    const tm = totalesMacros(d.comidas);
+    const cambios = [];
+    for (const m of MACROS) {
+      const { hab, log } = d.macros[m.id];
+      const dec = decidirSincronizacionMacro({ version: hab.version, total: tm[m.id].total, log, notaAuto: NOTA_AUTO_MACRO[m.id] });
+      if (dec.accion === 'guardar') {
+        const estadoPrevio = log?.status ?? null;                 // se guarda ANTES de escribir, para comparar con lo anterior
+        await H.guardarLog({ habit_id: hab.version.id, log_date: f, status: dec.status, value: dec.value, note: dec.note });
+        if (estadoPrevio !== dec.status) cambios.push({ nombre: m.nombre.toLowerCase(), que: dec.status === 'exceeded' ? 'excedido' : 'cumplido' });
+      } else if (dec.accion === 'quitar') {
+        await H.borrarLog(log.id);
+        cambios.push({ nombre: m.nombre.toLowerCase(), que: 'quitado' });
+      }
+    }
+    return cambios;
   }
+  const textoCambios = (cambios) => {
+    const de = (que) => cambios.filter((c) => c.que === que).map((c) => c.nombre).join(', ');
+    return [
+      de('cumplido') && ` Objetivo cumplido: ${de('cumplido')}.`,
+      de('excedido') && ` Te pasaste del máximo de ${de('excedido')}: queda «excedido».`,
+      de('quitado') && ` Se quitó la marca automática de ${de('quitado')}.`
+    ].filter(Boolean).join('');
+  };
 
   async function cargar(f = fecha, mensajeOk = '') {
     const t = ++token;
@@ -74,54 +105,9 @@ export function renderHoy(cont, ctx = {}) {
     ocupado = true; msg.textContent = ''; ok.textContent = '';
     try {
       await operacion();
-      const accion = await sincronizar(fecha);
-      const extra = accion === 'guardar' ? ' Llegaste a la meta: el día quedó cumplido.' : accion === 'quitar' ? ' Dejaste de llegar a la meta: el día vuelve a «sin completar».' : '';
-      await cargar(fecha, textoOk + extra);
+      const cambios = await sincronizar(fecha);
+      await cargar(fecha, textoOk + textoCambios(cambios));
     } catch (e) { msg.textContent = traducirError(e); } finally { ocupado = false; }
-  }
-
-  function tarjetaProteina() {
-    const { comidas, hab, log } = datos;
-    const t = totalDia(comidas);
-    if (hab.motivo === 'sin_habito' || hab.motivo === 'ambiguo') {
-      return h('div', { class: 'card pad' }, h('p', {}, hab.motivo === 'sin_habito'
-        ? 'Todavía no hay un hábito de proteína. Podés cargar comidas igual. Para medir la meta, creá uno en Central → Hábitos: módulo Nutri, tipo cantidad, nombre con «Proteína», unidad «g» y tu meta diaria.'
-        : 'Hay más de un hábito de cantidad en Nutri y no sé cuál es el de proteína. Ponele «Proteína» en el nombre al que corresponda (Central → Hábitos).'));
-    }
-    if (!hab.version) {
-      return h('div', { class: 'card pad' }, h('p', {}, 'El hábito de proteína no estaba vigente ese día. Podés cargar comidas igual.'));
-    }
-    const meta = Number(hab.version.target_value);
-    const e = estadoProteina(log, t);
-    const lineas = [];
-    lineas.push(t.total == null
-      ? `Meta de ese día: ${g(meta)}. Todavía no hay proteína cargada.`
-      : `${g(t.total)} de ${g(meta)}${t.total >= meta ? '.' : ` (faltan ${g(meta - t.total)}).`}`);
-    const av = aviso(t);
-    const nota = e.cerrado ? (log.note === NOTA_AUTO ? '' : 'Día cerrado.') : log ? 'Marcado solo al llegar a la meta; el día sigue abierto.' : '';
-    const acciones = e.cerrado
-      ? h('button', { class: 'btn btn-sec', type: 'button', onClick: async () => {
-        if (!confirm('¿Reabrir el día? Se borra el cierre y se vuelve a calcular con las comidas cargadas.')) return;
-        await cambiar(() => H.borrarLog(log.id), 'Día reabierto.');
-      } }, 'Reabrir el día')
-      : h('button', { class: 'btn', type: 'button', onClick: async () => {
-        msg.textContent = ''; ok.textContent = '';
-        const c = decidirCierre({ version: hab.version, totales: t, fecha, hoyFecha: hoy() });
-        if (c.error) { msg.textContent = c.error; return; }
-        if (c.confirmar && !confirm(c.confirmar)) return;
-        try {
-          await H.guardarLog({ habit_id: hab.version.id, log_date: fecha, status: c.status, value: c.value, note: c.note });
-          await cargar(fecha, `Día cerrado: ${c.status === 'done' ? 'cumplido' : 'incumplido'}.`);
-        } catch (err) { msg.textContent = traducirError(err); }
-      } }, 'Cerrar el día');
-    return h('div', { class: 'card pad' },
-      h('strong', {}, 'Proteína del día'),
-      h('p', {}, lineas[0]),
-      h('p', {}, h('span', { class: `badge ${e.estado === 'sin_completar' ? 'no_registrado' : e.estado}` }, ETIQUETA[e.estado])),
-      av ? h('p', { class: 'aviso' }, av) : null,
-      nota ? h('p', { class: 'fila-meta' }, nota) : null,
-      h('p', { class: 'fila-meta' }, 'Si cambiás comidas de un día cerrado, reabrilo y volvé a cerrarlo para recalcular.'),
-      h('div', { class: 'acciones' }, acciones));
   }
 
   const selTipo = (valor) => h('select', { 'aria-label': 'Tipo de comida', value: valor }, TIPOS_COMIDA.map((x) => h('option', { value: x.id }, x.nombre)));
@@ -221,13 +207,69 @@ export function renderHoy(cont, ctx = {}) {
       ...(modo === 'manual' ? camposManual() : camposAlimento()));
   }
 
-  function tarjetaMacros() {
+  // Una fila por macro: total del día, objetivo (si lo hay), estado y una nota con los números que faltan o sobran.
+  function filasMacros() {
     const tm = totalesMacros(datos.comidas);
-    const valor = (m) => (tm[m.id].total == null ? '—' : `${formatoNumero(tm[m.id].total)} ${m.unidad}`);
+    const hayComidas = datos.comidas.length > 0;
+    return MACROS.map((m) => {
+      const { hab, log } = datos.macros[m.id];
+      const e = estadoMacro({ version: hab.version, total: tm[m.id].total, log, notaAuto: NOTA_AUTO_MACRO[m.id], hayComidas });
+      return { macroId: m.id, nombre: m.nombre, unidad: m.unidad, version: hab.version, motivo: hab.motivo, log, total: tm[m.id].total, sinDato: tm[m.id].sinDato, ...e };
+    });
+  }
+
+  function tarjetaMacros() {
+    const filas = filasMacros();
+    const tm = totalesMacros(datos.comidas);
+    const hayComidas = datos.comidas.length > 0;
+    const conObjetivo = filas.filter((f) => f.version);
+    const hayAbiertas = conObjetivo.some((f) => !f.cerrado);
+    const hayCerradas = logsParaReabrir(filas).length > 0;
+
+    const fila = (f) => {
+      const total = f.total == null ? '—' : `${formatoNumero(f.total)} ${f.unidad}`;
+      const nota = f.motivo === 'ambiguo'
+        ? 'Hay más de un hábito de esta macro en Nutri: dejá uno solo en Central → Hábitos.'
+        : notaMacro({ version: f.version, total: f.total, estado: f.estado, cerrado: f.cerrado, unidad: f.unidad });
+      return h('div', { class: 'fila' },
+        h('div', { class: 'fila-top' }, h('div', { class: 'fila-nombre' }, f.nombre),
+          f.estado ? h('span', { class: `badge ${CLASE[f.estado]}`.trim() }, ETIQUETA[f.estado]) : null),
+        h('div', { class: 'fila-meta' }, f.version ? `${total} · objetivo ${textoObjetivo(f.version)}` : `${total} · sin objetivo`),
+        nota ? h('div', { class: 'fila-meta' }, nota) : null);
+    };
+
+    const cerrar = h('button', { class: 'btn', type: 'button' }, 'Cerrar el día');
+    cerrar.addEventListener('click', async () => {
+      if (ocupado) return;
+      msg.textContent = ''; ok.textContent = '';
+      const c = decidirCierreMacros({
+        filas: filas.map((f) => ({ macroId: f.macroId, nombre: f.nombre, version: f.version, total: f.total, sinDato: f.sinDato, log: f.log })),
+        hayComidas, fecha, hoyFecha: hoy()
+      });
+      if (c.error) { msg.textContent = c.error; return; }
+      if (c.confirmar && !confirm(c.confirmar)) return;
+      ocupado = true;
+      try {
+        for (const e of c.escribir) await H.guardarLog({ habit_id: e.habit_id, log_date: fecha, status: e.status, value: e.value, note: e.note });
+        await cargar(fecha, `Día cerrado: ${textoResumenCierre(c.resumen)}.`);
+      } catch (err) { msg.textContent = traducirError(err); } finally { ocupado = false; }
+    });
+    const reabrir = h('button', { class: 'btn btn-sec', type: 'button' }, 'Reabrir el día');
+    reabrir.addEventListener('click', async () => {
+      if (!confirm('¿Reabrir el día? Se borra el cierre de las macros y se vuelve a calcular con las comidas cargadas.')) return;
+      const logs = logsParaReabrir(filas);
+      await cambiar(async () => { for (const l of logs) await H.borrarLog(l.id); }, 'Día reabierto.');
+    });
+
     return h('div', { class: 'card pad' }, h('strong', {}, 'Macros del día'),
-      h('div', { class: 'metricas cuatro' }, MACROS.map((m) => h('div', { class: 'metrica' }, h('b', {}, valor(m)), h('span', {}, m.nombre)))),
+      ...filas.map(fila),
       ...avisosMacros(tm).map((a) => h('p', { class: 'aviso' }, a)),
-      h('p', { class: 'fila-meta' }, 'Los totales solo suman lo cargado. Hoy se mide la meta de proteína; los objetivos de las otras macros llegan en una próxima versión.'));
+      h('p', { class: 'fila-meta' }, 'Los totales solo suman lo cargado.'),
+      conObjetivo.length ? null : h('p', { class: 'fila-meta' }, 'Todavía no definiste objetivos de macros: configuralos en la pestaña Objetivos.'),
+      hayCerradas ? h('p', { class: 'fila-meta' }, 'Si cambiás comidas de un día cerrado, reabrilo y volvé a cerrarlo para recalcular.') : null,
+      conObjetivo.length && (hayAbiertas || hayCerradas)
+        ? h('div', { class: 'acciones' }, hayAbiertas ? cerrar : null, hayCerradas ? reabrir : null)
+        : null);
   }
 
   function pintar() {
@@ -255,7 +297,7 @@ export function renderHoy(cont, ctx = {}) {
           } }, 'Borrar'))))
       : [h('p', { class: 'fila-meta' }, 'No hay comidas cargadas este día.')];
 
-    raiz.replaceChildren(nav, tarjetaMacros(), tarjetaProteina(), formulario(), msg, ok, h('h2', { class: 'grupo-titulo' }, 'Comidas del día'), ...lista);
+    raiz.replaceChildren(nav, tarjetaMacros(), formulario(), msg, ok, h('h2', { class: 'grupo-titulo' }, 'Comidas del día'), ...lista);
   }
 
   cont.append(raiz);

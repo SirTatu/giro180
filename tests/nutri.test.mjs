@@ -2,8 +2,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  validarProteina, totalDia, totalesPorDia, aviso, estadoProteina, decidirSincronizacion,
-  decidirCierre, resumenProteina, buscarHabitoProteina, NOTA_AUTO, NOTA_CIERRE, estaCerrado
+  validarProteina, totalDia, totalesPorDia, aviso, estadoProteina,
+  resumenProteina, buscarHabitoProteina, NOTA_AUTO, NOTA_CIERRE, estaCerrado
 } from '../js/core/nutri.js';
 
 const ver = (o = {}) => ({ id: 'h1', series_id: 's1', module: 'nutri', kind: 'quantity', name: 'Proteína', unit: 'g',
@@ -36,37 +36,6 @@ test('estadoProteina: sin completar solo si hay comidas y ningún registro', () 
   assert.deepEqual(estadoProteina({ status: 'done', note: NOTA_AUTO }, t1), { estado: 'cumplido', cerrado: false });
   assert.deepEqual(estadoProteina({ status: 'missed', note: NOTA_CIERRE }, t1), { estado: 'incumplido', cerrado: true });
   assert.equal(estaCerrado({ note: null }), true);          // registro cargado a mano desde Central: no se toca
-});
-
-test('decidirSincronizacion: cumplido automático al llegar a la meta, nunca incumplido solo', () => {
-  const v = ver();
-  assert.equal(decidirSincronizacion({ version: v, total: 119.9, log: null }).accion, 'ninguna');
-  const g = decidirSincronizacion({ version: v, total: 120, log: null });
-  assert.deepEqual(g, { accion: 'guardar', status: 'done', value: 120, note: NOTA_AUTO });
-  // ya marcado con el mismo total: nada que escribir; con otro total: actualizar
-  assert.equal(decidirSincronizacion({ version: v, total: 120, log: { status: 'done', value: 120, note: NOTA_AUTO } }).accion, 'ninguna');
-  assert.equal(decidirSincronizacion({ version: v, total: 140, log: { status: 'done', value: 120, note: NOTA_AUTO } }).accion, 'guardar');
-  // dejó de llegar (o borró comidas): se quita solo el marcado automático
-  assert.equal(decidirSincronizacion({ version: v, total: 90, log: { status: 'done', value: 120, note: NOTA_AUTO } }).accion, 'quitar');
-  assert.equal(decidirSincronizacion({ version: v, total: null, log: { status: 'done', value: 120, note: NOTA_AUTO } }).accion, 'quitar');
-  // un cierre manual no se toca nunca
-  for (const total of [0, 90, 200, null]) assert.equal(decidirSincronizacion({ version: v, total, log: { status: 'missed', value: 50, note: NOTA_CIERRE } }).accion, 'ninguna');
-  assert.equal(decidirSincronizacion({ version: null, total: 500, log: null }).accion, 'ninguna');
-});
-
-test('decidirCierre: reglas del cierre manual', () => {
-  const v = ver(), H = '2026-03-10';
-  const t = (...ps) => totalDia(ps.map((p) => comida('2026-03-10', p)));
-  assert.ok(decidirCierre({ version: v, totales: t(), fecha: H, hoyFecha: H }).error);                 // sin comidas
-  assert.ok(decidirCierre({ version: v, totales: t(null), fecha: H, hoyFecha: H }).error);             // sin proteína cargada: falta el dato
-  assert.ok(decidirCierre({ version: v, totales: t(100), fecha: '2026-03-11', hoyFecha: H }).error);   // futuro
-  assert.ok(decidirCierre({ version: null, totales: t(100), fecha: H, hoyFecha: H }).error);
-  const bajo = decidirCierre({ version: v, totales: t(100), fecha: H, hoyFecha: H });
-  assert.deepEqual([bajo.error, bajo.status, bajo.value, bajo.note, bajo.confirmar], [null, 'missed', 100, NOTA_CIERRE, null]);
-  assert.equal(decidirCierre({ version: v, totales: t(120), fecha: H, hoyFecha: H }).status, 'done');
-  const conFalta = decidirCierre({ version: v, totales: t(100, null), fecha: H, hoyFecha: H });
-  assert.match(conFalta.confirmar, /sin proteína cargada/);
-  assert.match(conFalta.confirmar, /incumplido/);
 });
 
 test('buscarHabitoProteina: módulo Nutri, cantidad, nombre con «prote»; el agua no se confunde', () => {
