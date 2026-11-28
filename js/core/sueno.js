@@ -44,6 +44,12 @@ export function localAInstante(texto) {
   return instanteALocal(iso) === `${m[1]}T${m[2]}` ? iso : null;     // ida y vuelta: rechaza 2026-02-30 y horas 25:00
 }
 
+// «HH:MM:SS» en hora de Argentina (para mostrar con qué precisión se capturó una hora).
+export function horaSegundos(iso) {
+  const ms = aMs(iso);
+  return ms === null ? null : new Date(ms - OFFSET_MS).toISOString().slice(11, 19);
+}
+
 export const fechaDeInstante = (iso) => instanteALocal(iso)?.slice(0, 10) ?? null;     // «AAAA-MM-DD»
 export const horaTexto = (iso) => instanteALocal(iso)?.slice(11, 16) ?? null;          // «HH:MM»
 

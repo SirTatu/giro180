@@ -1,13 +1,17 @@
-// Módulo Vida: pestañas. Hoy solo «Sueño» (hito 4-1a); se suman Historial, acciones sociales y más en los próximos hitos.
+// Módulo Vida: pestañas. Hoy «Sueño» (hito 4-1a) y «Avisos» (prueba de notificaciones, hito 4-1b); se suman Historial, acciones sociales
+// y más en los próximos hitos. Una dirección como #/vida/avisos abre esa pestaña directo (la usan los avisos al tocarlos).
 import { h } from '../../core/dom.js';
 import { renderSueno } from './sueno.js';
+import { renderAvisos } from './avisos.js';
 
 const TABS = [
-  { id: 'sueno', nombre: 'Sueño', render: renderSueno }
+  { id: 'sueno', nombre: 'Sueño', render: renderSueno },
+  { id: 'avisos', nombre: 'Avisos', render: renderAvisos }
 ];
 
 export function renderVida(el, ctx) {
-  let actual = 'sueno';
+  const pedida = location.hash.replace(/^#\//, '').split('/')[1];
+  let actual = TABS.some((x) => x.id === pedida) ? pedida : 'sueno';
   const nav = h('div', { class: 'tabs', role: 'tablist' });
   const cuerpo = h('div');
 

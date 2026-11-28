@@ -45,7 +45,7 @@
 ## Etapa 4 — Vida y Estudio (plan aprobado por el usuario)
 - [ ] 4-1 Vida: sueño
   - [x] 4-1a Migración 011 + pestaña Vida → Sueño: «Me acuesto» / «Me levanté», noche o siesta, varios registros por día, cargar y corregir a mano, resumen del día (v0.21.0; entregado, pendiente de que el usuario lo pruebe)
-  - [ ] 4-1b Prueba de viabilidad de notificaciones en el iPhone del usuario (app instalada en la pantalla de inicio, iOS 26.5): permiso, notificación, toque y captura de la hora. Con el resultado se decide el 4-1c. Toca `sw.js` (código confirmado): pedir aprobación.
+  - [x] 4-1b Prueba de viabilidad de notificaciones en el iPhone del usuario (app instalada en la pantalla de inicio, iOS 26.5): pestaña Vida → Avisos y manejador `notificationclick` en `sw.js` (v0.22.0; entregado, **pendiente de que el usuario haga la prueba en el celular y cuente los resultados**: aviso visible, toque desde la pantalla de bloqueo y con la app cerrada, aviso con 20 s de espera con el celular bloqueado, aviso que dura toda la noche)
   - [ ] 4-1c Notificación de sueño definitiva (queda hasta que se levante; al tocarla se guarda la hora; si no hay conexión se guarda pendiente y se sube después), adaptada a lo que funcione en iPhone
 - [ ] 4-2 Despertares, conciliación, horas efectivas, acciones sociales e Historial de Vida
 - [ ] 4-3 Alerta de sueño insuficiente sostenido (`sleep_min_hours`, `sleep_alert_days` de `user_settings`) y Vida en informes y Panel

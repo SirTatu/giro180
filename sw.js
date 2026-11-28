@@ -1,6 +1,6 @@
 // Service Worker de Giro 180
 // Al cambiar archivos de la app, subí el número de VERSION para forzar la actualización.
-const VERSION = 'giro180-v0.21.0';
+const VERSION = 'giro180-v0.22.0';
 const ARCHIVOS = [
   './',
   'index.html',
@@ -32,6 +32,7 @@ const ARCHIVOS = [
   'js/core/alimentos.js',
   'js/core/macros.js',
   'js/core/sueno.js',
+  'js/core/avisos.js',
   'js/modules/central/index.js',
   'js/modules/central/datos.js',
   'js/modules/central/hoy.js',
@@ -59,6 +60,8 @@ const ARCHIVOS = [
   'js/modules/vida/index.js',
   'js/modules/vida/datos.js',
   'js/modules/vida/sueno.js',
+  'js/modules/vida/toques.js',
+  'js/modules/vida/avisos.js',
   'js/modules/gym/index.js',
   'js/modules/gym/datos.js',
   'js/modules/gym/ui.js',
@@ -106,4 +109,55 @@ self.addEventListener('fetch', (e) => {
       })
       .catch(() => caches.match(req))
   );
+});
+
+// ---------- Avisos (hito 4-1b): toque sobre una notificación ----------
+// ADITIVO: no cambia nada de lo de arriba. Cuando tocás una notificación de la app, ACÁ se captura la hora del toque (el instante
+// exacto, aunque la app esté cerrada), se guarda en una base local (IndexedDB) y se abre o enfoca la app.
+// Estos valores repiten DB_AVISOS de js/core/avisos.js (una prueba verifica que coincidan).
+const DB_AVISOS = { nombre: 'giro180-avisos', version: 1, almacen: 'toques' };
+
+function abrirAvisos() {
+  return new Promise((resolver, rechazar) => {
+    const r = indexedDB.open(DB_AVISOS.nombre, DB_AVISOS.version);
+    r.onupgradeneeded = () => {
+      if (!r.result.objectStoreNames.contains(DB_AVISOS.almacen)) r.result.createObjectStore(DB_AVISOS.almacen, { keyPath: 'id', autoIncrement: true });
+    };
+    r.onsuccess = () => resolver(r.result);
+    r.onerror = () => rechazar(r.error);
+  });
+}
+
+async function guardarToque(toque) {
+  const db = await abrirAvisos();
+  try {
+    await new Promise((resolver, rechazar) => {
+      const tx = db.transaction(DB_AVISOS.almacen, 'readwrite');
+      tx.objectStore(DB_AVISOS.almacen).add(toque);
+      tx.oncomplete = () => resolver();
+      tx.onerror = () => rechazar(tx.error);
+      tx.onabort = () => rechazar(tx.error);
+    });
+  } finally { db.close(); }
+}
+
+self.addEventListener('notificationclick', (e) => {
+  const iso = new Date().toISOString();                 // la hora se toma en el instante del toque, antes de cualquier otra cosa
+  const n = e.notification;
+  n.close();
+  e.waitUntil((async () => {
+    const datos = n.data ?? null;
+    const toque = { iso, tag: n.tag || null, accion: e.action || null, datos };
+    let guardado = true;
+    try { await guardarToque(toque); } catch (err) { guardado = false; }
+    const ventanas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const v of ventanas) v.postMessage({ tipo: 'toque-aviso', ...toque, guardado });
+    if (ventanas.length) {
+      try { await ventanas[0].focus(); } catch (err) { /* si no se puede enfocar, el sistema igual abre la app */ }
+      return;
+    }
+    const destino = typeof datos?.url === 'string' && datos.url.startsWith('./#/') ? datos.url : './#/vida';
+    // Si la base falló y no hay ventana para avisarle, la hora viaja en la dirección para no perderse.
+    await self.clients.openWindow(guardado ? destino : `./?toque=${encodeURIComponent(iso)}${destino.slice(2)}`);
+  })());
 });
