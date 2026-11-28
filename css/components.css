@@ -103,3 +103,7 @@ details summary { cursor: pointer; color: var(--muted); }
 /* Gym (hito 3-1) */
 .tres-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .aviso { color: var(--warn); margin: 0; font-size: .85rem; }
+
+/* Vida → Sueño (hito 4-1a) */
+.form input[type="datetime-local"] { width: 100%; }
+.metricas.compactas .metrica b { font-size: 1.05rem; }

@@ -1,6 +1,6 @@
 // Service Worker de Giro 180
 // Al cambiar archivos de la app, subí el número de VERSION para forzar la actualización.
-const VERSION = 'giro180-v0.20.0';
+const VERSION = 'giro180-v0.21.0';
 const ARCHIVOS = [
   './',
   'index.html',
@@ -31,6 +31,7 @@ const ARCHIVOS = [
   'js/core/areas.js',
   'js/core/alimentos.js',
   'js/core/macros.js',
+  'js/core/sueno.js',
   'js/modules/central/index.js',
   'js/modules/central/datos.js',
   'js/modules/central/hoy.js',
@@ -55,6 +56,9 @@ const ARCHIVOS = [
   'js/modules/nutri/alimentos.js',
   'js/modules/nutri/objetivos.js',
   'js/modules/nutri/botellas.js',
+  'js/modules/vida/index.js',
+  'js/modules/vida/datos.js',
+  'js/modules/vida/sueno.js',
   'js/modules/gym/index.js',
   'js/modules/gym/datos.js',
   'js/modules/gym/ui.js',

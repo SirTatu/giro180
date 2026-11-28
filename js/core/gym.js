@@ -39,11 +39,13 @@ export function traducirError(e) {
     if (/exercises_nombre_uq/.test(m)) return 'Ya existe un ejercicio con ese nombre.';
     if (/routines_nombre_uq/.test(m)) return 'Ya existe una rutina con ese nombre.';
     if (/water_containers_nombre_uq/.test(m)) return 'Ya existe una botella con ese nombre.';
+    if (/sleep_sessions_abierta_uq/.test(m)) return 'Ya hay un registro de sueño en curso.';
     if (/food_portions_nombre_uq/.test(m)) return 'Ese alimento ya tiene una porción con ese nombre.';
     if (/foods_nombre_uq/.test(m)) return 'Ya existe un alimento con ese nombre.';
     if (/foods_macros_suma_ck/.test(m)) return 'Carbohidratos, proteínas y grasas no pueden sumar más de 100 por cada 100 g (o ml).';
     return 'Ya existe un registro con esos datos.';
   }
+  if ((e?.code === '23514' || /violates check constraint/i.test(m)) && /sleep_sessions_fin_ck/.test(m)) return 'La hora de fin tiene que ser posterior al inicio y el registro no puede pasar de 24 horas.';
   if (e?.code === '23503' || /foreign key/i.test(m)) return 'No se puede por estar en uso. Archivalo en lugar de borrarlo.';
   return m || 'Error desconocido.';
 }

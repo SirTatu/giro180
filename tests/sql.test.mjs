@@ -100,7 +100,7 @@ test('los scripts de prueba mantienen el marcador del UID y cubren cada tabla nu
 
 // Cada migración nueva (005 en adelante) debe traer su script de prueba de seguridad (006, 008, ...): cubre cada tabla
 // creada, tiene el marcador del UID (nunca el UID real) y sus mensajes FALLO van de 1 a N sin saltos ni repetidos.
-for (const [nueva, prueba] of [['005_agua.sql', '006_test_rls_agua.sql'], ['007_alimentos.sql', '008_test_rls_alimentos.sql'], ['009_excedido.sql', '010_test_rls_excedido.sql']]) {
+for (const [nueva, prueba] of [['005_agua.sql', '006_test_rls_agua.sql'], ['007_alimentos.sql', '008_test_rls_alimentos.sql'], ['009_excedido.sql', '010_test_rls_excedido.sql'], ['011_sueno.sql', '012_test_rls_sueno.sql']]) {
   test(`${nueva}: su prueba ${prueba} cubre cada tabla, usa el marcador del UID y FALLO 1..N`, () => {
     assert.ok(crudo[nueva] && crudo[prueba], 'faltan archivos');
     assert.match(crudo[prueba], /yo uuid := 'PEGAR-AQUI-TU-USER-UID'::uuid;/);
@@ -129,4 +129,13 @@ test('009: solo agrega (columna opcional y un estado más): no borra tablas, col
   assert.match(sql, /add column if not exists target_max numeric;/);                    // opcional: sin NOT NULL ni default
   assert.match(sql, /status in \('done','missed','exceeded'\)/);                         // conserva los dos estados de siempre
   assert.ok(!/target_max numeric not null/i.test(sql));
+});
+
+test('011: solo crea la tabla de sueño (sin borrar ni tocar nada) y protege la regla de un solo registro en curso', () => {
+  const sql = crudo['011_sueno.sql'].replace(/--.*$/gm, '');
+  assert.ok(!/\bdrop\s+(table|column)\b/i.test(sql), 'no debe borrar tablas ni columnas');
+  assert.ok(!/\b(delete\s+from|truncate|update\s+public|alter table public\.(?!sleep_sessions|%I))/i.test(sql), 'no debe borrar ni modificar filas ni otras tablas');
+  assert.match(sql, /create unique index if not exists sleep_sessions_abierta_uq on public\.sleep_sessions \(user_id\) where ended_at is null;/);
+  assert.match(sql, /constraint sleep_sessions_fin_ck check \(ended_at is null or \(ended_at > started_at and ended_at - started_at <= interval '24 hours'\)\)/);
+  assert.match(sql, /kind in \('night','nap'\)/);
 });

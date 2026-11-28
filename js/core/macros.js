@@ -18,10 +18,10 @@ import { NOTA_CIERRE } from './nutri.js';
 
 export { NOTA_CIERRE };
 
-export const PATRON_HABITO = { kcal: /calor|kcal/, carbs: /carbo|hidrat/, protein: /prote/, fat: /grasa|lipid/ };
+const PATRON_HABITO = { kcal: /calor|kcal/, carbs: /carbo|hidrat/, protein: /prote/, fat: /grasa|lipid/ };
 // Marca del registro automático de cada macro (la de proteína es la de siempre, para no tocar registros existentes).
 export const NOTA_AUTO_MACRO = { kcal: 'auto-calorias', carbs: 'auto-carbohidratos', protein: 'auto-proteina', fat: 'auto-grasas' };
-export const LIMITE_OBJETIVO = { kcal: 20000, carbs: 2000, protein: 1000, fat: 1000 };
+const LIMITE_OBJETIVO = { kcal: 20000, carbs: 2000, protein: 1000, fat: 1000 };
 export const TIPOS_OBJETIVO = [
   { id: 'ninguno', nombre: 'Sin objetivo' }, { id: 'al_menos', nombre: 'Al menos' },
   { id: 'maximo', nombre: 'Como máximo' }, { id: 'entre', nombre: 'Entre un mínimo y un máximo' }
@@ -132,7 +132,7 @@ export function estadoVivo(version, total) {
   return e === 'exceeded' ? 'excedido' : e === 'done' ? 'dentro' : 'por_debajo';
 }
 
-export const estaCerradoMacro = (log, notaAuto) => !!log && log.note !== notaAuto;
+const estaCerradoMacro = (log, notaAuto) => !!log && log.note !== notaAuto;
 
 // Lo que se muestra de una macro. estado: cumplido · incumplido · excedido (según el registro) · sin_completar ·
 // dentro_del_limite · dentro_del_rango (en vivo, sin registro) · sin_dato · no_registrado · null (no hay objetivo).

@@ -51,7 +51,7 @@ Una fila por semana (`week_start` = lunes, único por usuario). `summary` y `dec
 La pestaña «Semana» siempre recalcula los números desde los registros: la foto sirve como historial.
 
 ## Pendiente
-Tablas de Gym, Nutri, Vida, Estudio y Derma: se crean en su etapa (migraciones 002+ de datos).
+Tablas de Estudio y Derma: se crean en su etapa (las de Gym, Nutri y Vida ya existen).
 
 ## Historial de decisiones: qué se anota solo
 La app agrega una fila a `decision_log` al: crear o cerrar una prioridad; crear, modificar, lograr, descartar o reactivar un objetivo.
@@ -76,3 +76,8 @@ Cómo aplicarla: exportar respaldo → ejecutar `007_alimentos.sql` → ejecutar
 `habit_definitions.target_max` (numeric, opcional): máximo del objetivo. Reglas: solo en hábitos de cantidad o duración, con meta (`target_value`), mayor que 0 y no menor que la meta. «Al menos X» = X sin máximo; «como máximo Y» = meta 0 y máximo Y; «entre X e Y» = los dos.
 `habit_logs.status` ahora admite `done`, `missed` y `exceeded` (se pasó del máximo). `exceeded` cuenta como registrado, no como no cumplido y queda fuera del porcentaje de cumplimiento.
 Cómo aplicarla: exportar respaldo → ejecutar `009_excedido.sql` → ejecutar `010_test_rls_excedido.sql` (con tu User UID) → subir la app.
+
+## Sueño (migración 011, v0.21.0)
+`sleep_sessions`: una fila por registro de sueño. `kind` (`night` o `nap`, por defecto `night`), `started_at` (obligatorio) y `ended_at` (instantes con zona; vacío = en curso), `note` opcional de hasta 500 caracteres. Reglas en la base: `ended_at` posterior a `started_at` y a lo sumo 24 horas después (`sleep_sessions_fin_ck`); **un solo registro en curso por usuario** (índice único parcial `sleep_sessions_abierta_uq`, donde `ended_at` es null). La no-superposición entre registros NO la garantiza la base: la valida la app.
+Un registro cuenta para el día de Argentina en que terminó; un día sin filas es «sin dato», nunca 0 horas. Un día puede tener varias filas (noche + siestas).
+Cómo aplicarla: exportar respaldo → ejecutar `011_sueno.sql` → ejecutar `012_test_rls_sueno.sql` (con tu User UID, antes de usar el sueño en la app) → subir la app.

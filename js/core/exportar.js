@@ -28,7 +28,9 @@ export const TABLAS_EXPORT = [
   { tabla: 'water_intakes', orden: 'id', etiqueta: 'Nutri: tomas de agua' },
   // Ampliación 3-6a (migración 007)
   { tabla: 'foods', orden: 'id', etiqueta: 'Nutri: alimentos' },
-  { tabla: 'food_portions', orden: 'id', etiqueta: 'Nutri: porciones de alimentos' }
+  { tabla: 'food_portions', orden: 'id', etiqueta: 'Nutri: porciones de alimentos' },
+  // Etapa 4, hito 4-1a (migración 011)
+  { tabla: 'sleep_sessions', orden: 'id', etiqueta: 'Vida: sueño (noches y siestas)' }
 ];
 
 // Formato del CSV pensado para Excel en español de Argentina (separador de listas «;» y coma decimal).

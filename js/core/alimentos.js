@@ -92,7 +92,7 @@ export const filtrarAlimentos = (lista, texto) => {
 
 // ---------- comidas con macros (hito 3-6b) ----------
 // Máximos que acepta la base de datos en una comida (columnas de meals).
-export const LIMITES_COMIDA = { kcal: 10000, carbs: 1000, protein: 500, fat: 1000 };
+const LIMITES_COMIDA = { kcal: 10000, carbs: 1000, protein: 500, fat: 1000 };
 
 function macroOpcional(texto, nombre, max) {
   const v = parsearNumero(texto);

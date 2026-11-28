@@ -15,7 +15,7 @@
 
 ## Estructura
 - `js/main.js` arranque · `js/auth.js` sesión · `js/supabase.js` cliente · `js/router.js` navegación por hash
-- `js/core/` lógica pura sin pantalla: fechas, **estados (regla de los 4 estados)**, **informes** (períodos, comparación y textos Markdown), constantes, helper DOM, **gym** (nombres, objetivos series × reps, parser e importador de rutinas, coincidencias entre ejercicios), **cuerpo** (pasos y tendencias de peso y cintura), **entrenos** (series, totales, volumen, última vez, resumen semanal, progresión, hábito «Entrenar»). Con pruebas en `tests/`.
+- `js/core/` lógica pura sin pantalla: fechas, **estados (regla de los 4 estados)**, **informes** (períodos, comparación y textos Markdown), constantes, helper DOM, **gym** (nombres, objetivos series × reps, parser e importador de rutinas, coincidencias entre ejercicios), **sueno** (registros de noche y siesta, horas de Argentina, resumen por día), **cuerpo** (pasos y tendencias de peso y cintura), **entrenos** (series, totales, volumen, última vez, resumen semanal, progresión, hábito «Entrenar»). Con pruebas en `tests/`.
 - `js/views/` pantallas generales (login, estructura) · `js/modules/<modulo>/` cada módulo
 - `js/modules/compartido/medidas.js` (peso y cintura, compartido Gym/Nutri), `js/modules/gym/`: `index.js` (pestañas), `pasos.js`, `cuerpo.js`, `entrenar.js`, `historial.js`, `rutinas.js`, `ejercicios.js`, `importar.js`, `datos.js` (consultas a Supabase), `ui.js`. Mismo patrón que Central: `render(cont, ctx)`, token anti-respuestas viejas, error con Reintentar.
 - `sql/` migraciones numeradas, se ejecutan a mano en Supabase
@@ -92,3 +92,10 @@
 - `core/areas.js`: `nutriArea` devuelve las 4 macros (objetivo, resumen actual y promedio anterior) y el agua; `indicadoresPanel` / `textoPanel` arman el Panel con `estadoMacro` y `notaMacro`, los mismos que usa Nutri → Hoy.
 - Regla de los informes: una macro sin objetivo y sin datos no aparece; sin objetivo pero con datos muestra solo promedio y día más alto (nunca un estado); un día excedido se cuenta aparte y no baja el porcentaje.
 - `core/nutri.js` quedó reducido a los tipos de comida, `validarProteina` y `NOTA_CIERRE`: las funciones de proteína que reemplazaron las macros se retiraron.
+
+## Vida → Sueño (hito 4-1a)
+- `js/core/sueno.js` (lógica pura, con pruebas): conversión entre hora de Argentina (UTC-3 fija, sin horario de verano) e instantes ISO por aritmética (se ve igual en cualquier navegador), duraciones, `validarSesion` (futuro, orden, 24 h, nota, superposición), `decidirInicio` / `decidirFin` (botones «Me acuesto» / «Me levanté» con la hora de «ahora», que se pasa como texto para poder probar), `resumenDia` (suma noche y siestas de los registros que terminaron ese día). Un día sin registros devuelve null, nunca 0. El agrupado por día y el texto de resumen para el Historial se agregan en el 4-2.
+- `js/modules/vida/`: `index.js` (pestañas; hoy solo Sueño), `datos.js` (tabla `sleep_sessions`; falla si una consulta llega a 1000 filas; `cerrarSesion` solo cierra si sigue en curso) y `sueno.js` (pantalla: tarjeta «ahora», formulario a mano, resumen del día y lista).
+- Un registro cuenta para el día en que terminó. La pantalla lee por rango de `ended_at` usando los límites del día de Argentina (`limitesDelDia`) y el registro en curso aparte. La no-superposición se valida en el cliente (no hay restricción en la base); el máximo de 24 h y el «un solo registro en curso» sí los garantiza la base.
+- Escrituras de a una por vez (bandera `ocupado`). `traducirError` (en `core/gym.js`) traduce `sleep_sessions_abierta_uq` y `sleep_sessions_fin_ck`.
+- Límites conocidos de la plataforma (relevantes para los próximos hitos): en iPhone las notificaciones web solo funcionan con la app instalada en la pantalla de inicio, no tienen botones dentro de la notificación y un aviso con el celular bloqueado (pomodoro) requiere un servidor que envíe notificaciones push.
